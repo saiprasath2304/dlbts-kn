@@ -1,6 +1,23 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
-	import Flash from '#lib/components/Flash.svelte';
+	import Plus from '@lucide/svelte/icons/plus';
+	import Upload from '@lucide/svelte/icons/upload';
+	import Download from '@lucide/svelte/icons/download';
+	import Pencil from '@lucide/svelte/icons/pencil';
+	import Search from '@lucide/svelte/icons/search';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import * as Table from '#lib/components/ui/table/index.js';
+	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.js';
+	import { Badge } from '#lib/components/ui/badge/index.js';
+	import { Button, buttonVariants } from '#lib/components/ui/button/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import { Label } from '#lib/components/ui/label/index.js';
+	import { Checkbox } from '#lib/components/ui/checkbox/index.js';
+	import PageHeader from '#lib/components/app/PageHeader.svelte';
+	import FormFeedback from '#lib/components/app/FormFeedback.svelte';
+	import FormDialog from '#lib/components/app/FormDialog.svelte';
+	import ConfirmForm from '#lib/components/app/ConfirmForm.svelte';
+	import ParticipantForm from '#lib/components/app/ParticipantForm.svelte';
+	import NativeSelect from '#lib/components/app/NativeSelect.svelte';
 	import { t } from '#lib/i18n/t.svelte.ts';
 
 	let { data, form } = $props();
@@ -10,186 +27,151 @@
 	const exportQuery = $derived(
 		new URLSearchParams({ group: data.filters.group, event: data.filters.event }).toString()
 	);
+	let inactive = $derived(data.filters.inactive);
 </script>
 
 <svelte:head><title>{t('admin.participants.title')}</title></svelte:head>
 
-{#snippet participantFields(p?: (typeof data.participants)[number])}
-	{@const sfx = p?.id ?? 'new'}
-	<div class="form-grid">
-		<div>
-			<label for="p-code-{sfx}">{t('common.code')}</label><input
-				id="p-code-{sfx}"
-				name="code"
-				required
-				value={p?.code ?? ''}
-			/>
-		</div>
-		<div>
-			<label for="p-name-{sfx}">{t('common.name')}</label><input
-				id="p-name-{sfx}"
-				name="name"
-				required
-				value={p?.name ?? ''}
-			/>
-		</div>
-		<div>
-			<label for="p-kind-{sfx}">{t('admin.participants.kind')}</label>
-			<select id="p-kind-{sfx}" name="kind" value={p?.kind ?? 'individual'}>
-				<option value="individual">{t('admin.participants.kind_individual')}</option>
-				<option value="team">{t('admin.participants.kind_team')}</option>
-			</select>
-		</div>
-		<div>
-			<label for="p-group-{sfx}">{t('common.group')}</label>
-			<select id="p-group-{sfx}" name="group_id" value={p?.group_id ?? ''} required>
-				{#each data.groups as g (g.id)}<option value={g.id}>{g.name}</option>{/each}
-			</select>
-		</div>
-		<div>
-			<label for="p-aff-{sfx}">{t('admin.participants.affiliation')}</label><input
-				id="p-aff-{sfx}"
-				name="affiliation"
-				value={p?.affiliation ?? ''}
-			/>
-		</div>
-		<div>
-			<label for="p-reg-{sfx}">{t('admin.participants.registration_no')}</label><input
-				id="p-reg-{sfx}"
-				name="registration_no"
-				value={p?.registration_no ?? ''}
-			/>
-		</div>
-		<div>
-			<label for="p-notes-{sfx}">{t('admin.participants.notes')}</label><input
-				id="p-notes-{sfx}"
-				name="notes"
-				value={p?.notes ?? ''}
-			/>
-		</div>
-	</div>
-{/snippet}
-
-<div class="stack">
-	<div class="row between">
-		<h1>{t('admin.participants.title')}</h1>
-		<div class="row">
-			<a class="btn secondary" href="/admin/participants/import">{t('nav.import')}</a>
-			<a class="btn ghost" href="/admin/participants/export?format=csv&{exportQuery}" download
-				>{t('common.download_csv')}</a
+<div class="grid grid-cols-1 gap-6">
+	<PageHeader title={t('admin.participants.title')}>
+		{#snippet actions()}
+			<Button href="/admin/participants/import" variant="outline"
+				><Upload />{t('nav.import')}</Button
 			>
-			<a class="btn ghost" href="/admin/participants/export?format=xlsx&{exportQuery}" download
-				>{t('common.download_xlsx')}</a
-			>
-		</div>
-	</div>
-	<Flash {form} />
-
-	<form method="GET" class="card form-grid">
-		<div>
-			<label for="f-q">{t('common.search')}</label>
-			<input id="f-q" name="q" type="search" value={data.filters.q} />
-		</div>
-		<div>
-			<label for="f-group">{t('common.group')}</label>
-			<select id="f-group" name="group" value={data.filters.group}>
-				<option value="">{t('common.all')}</option>
-				{#each data.groups as g (g.id)}<option value={g.id}>{g.name}</option>{/each}
-			</select>
-		</div>
-		<div>
-			<label for="f-event">{t('common.event')}</label>
-			<select id="f-event" name="event" value={data.filters.event}>
-				<option value="">{t('common.all')}</option>
-				{#each allEvents as e (e.id)}<option value={e.id}>{e.group} – {e.name}</option>{/each}
-			</select>
-		</div>
-		<label class="checkbox"
-			><input type="checkbox" name="inactive" value="1" checked={data.filters.inactive} />
-			{t('common.inactive')}</label
-		>
-		<button class="btn secondary" type="submit">{t('common.filter')}</button>
-	</form>
-
-	<details class="card">
-		<summary class="btn secondary">{t('admin.participants.new')}</summary>
-		<form method="POST" action="?/save" use:enhance class="stack" style="margin-top: 1rem">
-			<p class="help">{t('admin.participants.code_help')}</p>
-			{@render participantFields()}
-			<div>
-				<label for="p-event-new"
-					>{t('admin.participants.add_to_event')} ({t('common.optional')})</label
+			<DropdownMenu.Root>
+				<DropdownMenu.Trigger class={buttonVariants({ variant: 'outline' })}
+					><Download />{t('admin.participants.export')}</DropdownMenu.Trigger
 				>
-				<select id="p-event-new" name="event_id">
-					<option value="">{t('common.none')}</option>
-					{#each allEvents as e (e.id)}<option value={e.id}>{e.group} – {e.name}</option>{/each}
-				</select>
-			</div>
-			<button class="btn" type="submit">{t('common.create')}</button>
-		</form>
-	</details>
+				<DropdownMenu.Content align="end">
+					<DropdownMenu.Item>
+						{#snippet child({ props })}<a
+								{...props}
+								href="/admin/participants/export?format=csv&{exportQuery}"
+								download>{t('common.download_csv')}</a
+							>{/snippet}
+					</DropdownMenu.Item>
+					<DropdownMenu.Item>
+						{#snippet child({ props })}<a
+								{...props}
+								href="/admin/participants/export?format=xlsx&{exportQuery}"
+								download>{t('common.download_xlsx')}</a
+							>{/snippet}
+					</DropdownMenu.Item>
+				</DropdownMenu.Content>
+			</DropdownMenu.Root>
+			<FormDialog action="?/save" title={t('admin.participants.new')} wide>
+				{#snippet trigger()}<Plus />{t('admin.participants.new')}{/snippet}
+				<ParticipantForm groups={data.groups} events={allEvents} />
+			</FormDialog>
+		{/snippet}
+	</PageHeader>
+	<FormFeedback {form} />
 
-	{#if data.participants.length === 0}
-		<p class="muted">{t('admin.participants.none')}</p>
-	{/if}
-	<ul class="plist" role="list">
-		{#each data.participants as p (p.id)}
-			<li class="card stack">
-				<div class="row between">
-					<div>
-						<strong class="big">{p.name}</strong> <span class="mono small">{p.code}</span>
-						<div class="small muted">
-							{p.groups?.name} · {p.kind === 'team'
-								? t('admin.participants.kind_team')
-								: t('admin.participants.kind_individual')}
-							{#if p.affiliation}
-								· {p.affiliation}{/if}
-						</div>
-						<div class="small">
-							{t('admin.participants.events')}: {p.event_participants
-								.filter((l) => l.is_active)
-								.map((l) => l.events?.name)
-								.join(', ') || t('common.none')}
-						</div>
-					</div>
-					<span class="badge {p.is_active ? 'success' : 'neutral'}"
-						>{p.is_active ? t('common.active') : t('common.inactive')}</span
-					>
-				</div>
-				<details>
-					<summary class="btn small ghost">{t('common.edit')}</summary>
-					<form method="POST" action="?/save" use:enhance class="stack" style="margin-top: 1rem">
-						<input type="hidden" name="id" value={p.id} />
-						{@render participantFields(p)}
-						<button class="btn secondary" type="submit">{t('common.update')}</button>
-					</form>
-					<form method="POST" action="?/setActive" use:enhance class="row" style="margin-top: 1rem">
-						<input type="hidden" name="id" value={p.id} />
-						<input type="hidden" name="active" value={p.is_active ? 'false' : 'true'} />
-						<input
-							name="reason"
-							placeholder="{t('common.reason')} ({t('common.optional')})"
-							aria-label={t('common.reason')}
+	<Card.Root>
+		<Card.Content>
+			<form
+				method="GET"
+				class="grid items-end gap-4 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_auto_auto]"
+			>
+				<div class="grid gap-2">
+					<Label for="f-q">{t('common.search')}</Label>
+					<div class="relative">
+						<Search
+							class="text-muted-foreground pointer-events-none absolute top-3 left-3 size-5"
 						/>
-						<button class="btn small {p.is_active ? 'danger' : 'secondary'}" type="submit">
-							{p.is_active ? t('common.deactivate') : t('common.activate')}
-						</button>
-					</form>
-				</details>
-			</li>
-		{/each}
-	</ul>
-</div>
+						<Input id="f-q" name="q" type="search" value={data.filters.q} class="pl-10" />
+					</div>
+				</div>
+				<div class="grid gap-2">
+					<Label for="f-group">{t('common.group')}</Label>
+					<NativeSelect id="f-group" name="group" value={data.filters.group}>
+						<option value="">{t('common.all')}</option>
+						{#each data.groups as g (g.id)}<option value={g.id}>{g.name}</option>{/each}
+					</NativeSelect>
+				</div>
+				<div class="grid gap-2">
+					<Label for="f-event">{t('common.event')}</Label>
+					<NativeSelect id="f-event" name="event" value={data.filters.event}>
+						<option value="">{t('common.all')}</option>
+						{#each allEvents as e (e.id)}<option value={e.id}>{e.group} – {e.name}</option>{/each}
+					</NativeSelect>
+				</div>
+				<div class="flex h-11 items-center gap-2">
+					<Checkbox id="f-inactive" name="inactive" value="1" bind:checked={inactive} />
+					<Label for="f-inactive" class="font-normal">{t('common.inactive')}</Label>
+				</div>
+				<Button type="submit" variant="secondary">{t('common.filter')}</Button>
+			</form>
+		</Card.Content>
+	</Card.Root>
 
-<style>
-	.plist {
-		list-style: none;
-		padding: 0;
-		margin: 0;
-		display: grid;
-		gap: 0.75rem;
-	}
-	.plist input[name='reason'] {
-		max-width: 18rem;
-	}
-</style>
+	<Card.Root class="py-0">
+		{#if data.participants.length === 0}
+			<p class="text-muted-foreground p-6">{t('admin.participants.none')}</p>
+		{:else}
+			<Table.Root>
+				<Table.Header>
+					<Table.Row>
+						<Table.Head>{t('common.participant')}</Table.Head>
+						<Table.Head class="hidden md:table-cell">{t('common.group')}</Table.Head>
+						<Table.Head class="hidden lg:table-cell">{t('admin.participants.events')}</Table.Head>
+						<Table.Head class="text-right">{t('common.actions')}</Table.Head>
+					</Table.Row>
+				</Table.Header>
+				<Table.Body>
+					{#each data.participants as p (p.id)}
+						<Table.Row class={p.is_active ? '' : 'opacity-60'}>
+							<Table.Cell class="py-3 whitespace-normal">
+								<div class="font-semibold">{p.name}</div>
+								<div class="text-muted-foreground text-sm">
+									<span class="font-mono">{p.code}</span>
+									· {p.kind === 'team'
+										? t('admin.participants.kind_team')
+										: t('admin.participants.kind_individual')}
+									{#if p.affiliation}· {p.affiliation}{/if}
+								</div>
+								{#if !p.is_active}<Badge variant="neutral" class="mt-1"
+										>{t('common.inactive')}</Badge
+									>{/if}
+							</Table.Cell>
+							<Table.Cell class="hidden md:table-cell">{p.groups?.name}</Table.Cell>
+							<Table.Cell class="hidden whitespace-normal lg:table-cell">
+								<div class="flex flex-wrap gap-1">
+									{#each p.event_participants.filter((l) => l.is_active) as l (l.event_id)}<Badge
+											variant="secondary">{l.events?.name}</Badge
+										>{:else}<span class="text-muted-foreground text-sm">{t('common.none')}</span
+										>{/each}
+								</div>
+							</Table.Cell>
+							<Table.Cell class="text-right">
+								<div class="flex justify-end gap-1">
+									<FormDialog action="?/save" title={p.name} variant="ghost" size="sm" wide>
+										{#snippet trigger()}<Pencil /><span class="sr-only sm:not-sr-only"
+												>{t('common.edit')}</span
+											>{/snippet}
+										<ParticipantForm participant={p} groups={data.groups} />
+									</FormDialog>
+									<ConfirmForm
+										action="?/setActive"
+										label={p.is_active ? t('common.deactivate') : t('common.activate')}
+										title={`${p.is_active ? t('common.deactivate') : t('common.activate')}: ${p.name}`}
+										optionalNote
+										reasonLabel={t('common.reason')}
+										danger={p.is_active}
+										variant="ghost"
+										size="sm"
+									>
+										{#snippet fields()}
+											<input type="hidden" name="id" value={p.id} />
+											<input type="hidden" name="active" value={p.is_active ? 'false' : 'true'} />
+										{/snippet}
+									</ConfirmForm>
+								</div>
+							</Table.Cell>
+						</Table.Row>
+					{/each}
+				</Table.Body>
+			</Table.Root>
+		{/if}
+	</Card.Root>
+</div>

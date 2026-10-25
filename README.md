@@ -104,7 +104,7 @@ The admin can change any judge's password and display name under **Judges**.
 ## Updating the event list
 
 The groups, events, criteria and judge accounts come from `scripts/dlbts-kn-2026.ts`.
-Small changes are easiest in the app (**Events**, **Judges**, **Assignments**). For bigger
+Small changes are easiest in the app: **Events** (groups, events, criteria, and which judges and participants are in each event) and **Judges**. For bigger
 changes, edit that file, run `npm run setup:sql`, and run the new
 `supabase/setup/02_dlbts_kn_2026.sql` again in the Supabase SQL editor (it only adds or
 renames, never deletes).

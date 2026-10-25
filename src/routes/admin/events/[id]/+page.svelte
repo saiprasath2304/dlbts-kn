@@ -1,7 +1,24 @@
 <script lang="ts">
+	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
+	import Plus from '@lucide/svelte/icons/plus';
+	import Pencil from '@lucide/svelte/icons/pencil';
+	import Upload from '@lucide/svelte/icons/upload';
+	import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
 	import { enhance } from '$app/forms';
-	import Flash from '#lib/components/Flash.svelte';
-	import ReasonField from '#lib/components/ReasonField.svelte';
+	import * as Tabs from '#lib/components/ui/tabs/index.js';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import * as Table from '#lib/components/ui/table/index.js';
+	import { Badge } from '#lib/components/ui/badge/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { Label } from '#lib/components/ui/label/index.js';
+	import PageHeader from '#lib/components/app/PageHeader.svelte';
+	import FormFeedback from '#lib/components/app/FormFeedback.svelte';
+	import FormDialog from '#lib/components/app/FormDialog.svelte';
+	import ConfirmForm from '#lib/components/app/ConfirmForm.svelte';
+	import EventForm from '#lib/components/app/EventForm.svelte';
+	import CriterionForm from '#lib/components/app/CriterionForm.svelte';
+	import ReasonField from '#lib/components/app/ReasonField.svelte';
+	import NativeSelect from '#lib/components/app/NativeSelect.svelte';
 	import { t } from '#lib/i18n/t.svelte.ts';
 	import { formatMark } from '#lib/scoring.ts';
 
@@ -11,301 +28,275 @@
 		data.criteria.filter((c) => c.is_active).reduce((s, c) => s + c.max_marks, 0)
 	);
 	const assignedIds = $derived(new Set(data.assignments.map((a) => a.judge_id)));
+	const freeJudges = $derived(data.judges.filter((j) => !assignedIds.has(j.id)));
+	let busy = $state(false);
 </script>
 
 <svelte:head><title>{ev.name}</title></svelte:head>
 
-<div class="stack">
-	<a href="/admin/events">← {t('admin.events.title')}</a>
-	<div class="row between">
-		<div>
-			<div class="muted">{ev.groups?.name}</div>
-			<h1 style="margin: 0">{ev.name} <span class="mono small muted">{ev.code}</span></h1>
-		</div>
-		{#if data.scoringStarted}<span class="badge warning">{t('admin.events.scoring_started')}</span
-			>{/if}
+<div class="grid grid-cols-1 gap-6">
+	<div>
+		<Button href="/admin/events?group={ev.group_id}" variant="ghost" size="sm" class="-ml-2"
+			><ArrowLeft />{t('admin.events.title')}</Button
+		>
 	</div>
-	<Flash {form} />
-
-	<details class="card">
-		<summary class="btn small ghost">{t('common.edit')}</summary>
-		<form method="POST" action="?/saveEvent" use:enhance class="stack" style="margin-top: 1rem">
-			<input type="hidden" name="id" value={ev.id} />
-			<div class="form-grid">
-				<div>
-					<label for="e-group">{t('common.group')}</label>
-					<select id="e-group" name="group_id" value={ev.group_id}>
-						{#each data.groups as g (g.id)}<option value={g.id}>{g.name}</option>{/each}
-					</select>
-				</div>
-				<div>
-					<label for="e-code">{t('common.code')}</label><input
-						id="e-code"
-						name="code"
-						required
-						value={ev.code}
-					/>
-				</div>
-				<div>
-					<label for="e-name">{t('common.name')}</label><input
-						id="e-name"
-						name="name"
-						required
-						value={ev.name}
-					/>
-				</div>
-				<div>
-					<label for="e-prec">{t('admin.events.precision')}</label>
-					<select id="e-prec" name="score_precision" value={String(ev.score_precision)}>
-						<option value="0">{t('admin.events.precision_0')}</option>
-						<option value="1">{t('admin.events.precision_1')}</option>
-						<option value="2">{t('admin.events.precision_2')}</option>
-					</select>
-				</div>
-				<div>
-					<label for="e-order">{t('common.order')}</label><input
-						id="e-order"
-						name="display_order"
-						type="number"
-						value={ev.display_order}
-					/>
-				</div>
-				<label class="checkbox"
-					><input type="checkbox" name="is_active" checked={ev.is_active} />
-					{t('common.active')}</label
-				>
-			</div>
-			<div>
-				<label for="e-desc">{t('common.description')}</label><textarea
-					id="e-desc"
-					name="description">{ev.description ?? ''}</textarea
-				>
-			</div>
-			<div>
-				<label for="e-ins">{t('admin.events.instructions')}</label><textarea
-					id="e-ins"
-					name="instructions">{ev.instructions ?? ''}</textarea
-				>
-			</div>
-			<ReasonField show={data.scoringStarted} id="e-reason" />
-			<button class="btn" type="submit">{t('common.update')}</button>
-		</form>
-	</details>
-
-	<!-- Criteria -->
-	<section class="card stack" aria-labelledby="crit-h">
-		<div class="row between">
-			<h2 id="crit-h">{t('admin.criteria.title')}</h2>
-			<strong>{t('admin.criteria.total_max', { max: formatMark(totalMax) })}</strong>
-		</div>
-		{#if data.criteria.length === 0}<p class="muted">{t('admin.criteria.none')}</p>{/if}
-		{#each data.criteria as c (c.id)}
-			<form
-				method="POST"
-				action="?/saveCriterion"
-				use:enhance
-				class="form-grid crit"
-				class:inactive={!c.is_active}
+	<PageHeader title={ev.name} eyebrow={ev.groups?.name}>
+		{#snippet actions()}
+			{#if data.scoringStarted}<Badge variant="warning" class="text-sm"
+					><TriangleAlert />{t('admin.events.scoring_started')}</Badge
+				>{/if}
+			<Button href="/admin/submissions?event={ev.id}" variant="outline" size="sm"
+				>{t('nav.submissions')}</Button
 			>
-				<input type="hidden" name="id" value={c.id} />
-				<div>
-					<label for="c-name-{c.id}">{t('common.name')}</label><input
-						id="c-name-{c.id}"
-						name="name"
-						required
-						value={c.name}
-					/>
-				</div>
-				<div>
-					<label for="c-max-{c.id}">{t('admin.criteria.max')}</label><input
-						id="c-max-{c.id}"
-						name="max_marks"
-						inputmode="decimal"
-						required
-						value={formatMark(c.max_marks)}
-					/>
-				</div>
-				<div>
-					<label for="c-order-{c.id}">{t('common.order')}</label><input
-						id="c-order-{c.id}"
-						name="display_order"
-						type="number"
-						value={c.display_order}
-					/>
-				</div>
-				<div>
-					<label for="c-desc-{c.id}">{t('common.description')}</label><input
-						id="c-desc-{c.id}"
-						name="description"
-						value={c.description ?? ''}
-					/>
-				</div>
-				<label class="checkbox"
-					><input type="checkbox" name="is_active" checked={c.is_active} />
-					{t('common.active')}</label
-				>
-				{#if data.scoringStarted}
-					<div>
-						<label for="c-reason-{c.id}">{t('common.reason')}</label><input
-							id="c-reason-{c.id}"
-							name="reason"
-							placeholder={t('common.confirm_reason_title')}
+			<Button href="/admin/results/{ev.id}" variant="outline" size="sm">{t('nav.results')}</Button>
+		{/snippet}
+	</PageHeader>
+	<FormFeedback {form} />
+
+	<Tabs.Root value="criteria">
+		<Tabs.List class="h-auto flex-wrap">
+			<Tabs.Trigger value="criteria" class="px-4 py-2"
+				>{t('admin.events.tab_criteria')}
+				<Badge variant="neutral" class="ml-1.5">{data.criteria.length}</Badge></Tabs.Trigger
+			>
+			<Tabs.Trigger value="judges" class="px-4 py-2"
+				>{t('admin.events.tab_judges')}
+				<Badge variant="neutral" class="ml-1.5"
+					>{data.assignments.filter((a) => a.is_active).length}</Badge
+				></Tabs.Trigger
+			>
+			<Tabs.Trigger value="participants" class="px-4 py-2"
+				>{t('admin.events.tab_participants')}
+				<Badge variant="neutral" class="ml-1.5"
+					>{data.entries.filter((e) => e.is_active).length}</Badge
+				></Tabs.Trigger
+			>
+			<Tabs.Trigger value="details" class="px-4 py-2">{t('admin.audit.details')}</Tabs.Trigger>
+		</Tabs.List>
+
+		<!-- Criteria -->
+		<Tabs.Content value="criteria" class="mt-4">
+			<Card.Root class="gap-0 py-0">
+				<Card.Header class="flex flex-row items-center justify-between gap-3 border-b py-4">
+					<Card.Title>{t('admin.criteria.total_max', { max: formatMark(totalMax) })}</Card.Title>
+					<FormDialog action="?/saveCriterion" title={t('admin.criteria.new')} size="sm">
+						{#snippet trigger()}<Plus />{t('admin.criteria.new')}{/snippet}
+						<CriterionForm
+							nextOrder={data.criteria.length + 1}
+							scoringStarted={data.scoringStarted}
 						/>
-					</div>
+					</FormDialog>
+				</Card.Header>
+				{#if data.criteria.length === 0}
+					<p class="text-muted-foreground p-6">{t('admin.criteria.none')}</p>
+				{:else}
+					<Table.Root>
+						<Table.Header>
+							<Table.Row>
+								<Table.Head class="w-12">#</Table.Head>
+								<Table.Head>{t('common.name')}</Table.Head>
+								<Table.Head class="text-right">{t('admin.criteria.max')}</Table.Head>
+								<Table.Head></Table.Head>
+							</Table.Row>
+						</Table.Header>
+						<Table.Body>
+							{#each data.criteria as c (c.id)}
+								<Table.Row class={c.is_active ? '' : 'opacity-60'}>
+									<Table.Cell class="text-muted-foreground">{c.display_order}</Table.Cell>
+									<Table.Cell class="whitespace-normal">
+										<span class="font-medium">{c.name}</span>
+										{#if !c.is_active}<Badge variant="neutral" class="ml-1"
+												>{t('common.inactive')}</Badge
+											>{/if}
+										{#if c.description}<div class="text-muted-foreground text-sm">
+												{c.description}
+											</div>{/if}
+									</Table.Cell>
+									<Table.Cell class="text-right font-semibold tabular-nums"
+										>{formatMark(c.max_marks)}</Table.Cell
+									>
+									<Table.Cell class="w-24 text-right">
+										<FormDialog action="?/saveCriterion" title={c.name} variant="ghost" size="sm">
+											{#snippet trigger()}<Pencil />{t('common.edit')}{/snippet}
+											<CriterionForm criterion={c} scoringStarted={data.scoringStarted} />
+										</FormDialog>
+									</Table.Cell>
+								</Table.Row>
+							{/each}
+						</Table.Body>
+					</Table.Root>
 				{/if}
-				<button class="btn secondary" type="submit">{t('common.update')}</button>
-			</form>
-		{/each}
-		<form method="POST" action="?/saveCriterion" use:enhance class="stack">
-			<h3>{t('admin.criteria.new')}</h3>
-			<div class="form-grid">
-				<div>
-					<label for="nc-name">{t('common.name')}</label><input id="nc-name" name="name" required />
-				</div>
-				<div>
-					<label for="nc-max">{t('admin.criteria.max')}</label><input
-						id="nc-max"
-						name="max_marks"
-						inputmode="decimal"
-						required
-						value="25"
-					/>
-				</div>
-				<div>
-					<label for="nc-order">{t('common.order')}</label><input
-						id="nc-order"
-						name="display_order"
-						type="number"
-						value={data.criteria.length}
-					/>
-				</div>
-				<div>
-					<label for="nc-desc">{t('common.description')}</label><input
-						id="nc-desc"
-						name="description"
-					/>
-				</div>
-			</div>
-			<ReasonField show={data.scoringStarted} id="nc-reason" />
-			<button class="btn" type="submit">{t('common.add')}</button>
-		</form>
-	</section>
+			</Card.Root>
+		</Tabs.Content>
 
-	<!-- Judges -->
-	<section class="card stack" aria-labelledby="judges-h">
-		<h2 id="judges-h">{t('admin.events.tab_judges')}</h2>
-		{#if data.assignments.length === 0}<p class="muted">{t('admin.assignments.none')}</p>{/if}
-		<ul class="list">
-			{#each data.assignments as a (a.id)}
-				<li class="row between">
-					<span>
-						<strong>{a.profiles?.display_name}</strong>
-						<span class="mono small">{a.profiles?.username}</span>
-						{#if !a.is_active}<span class="badge neutral">{t('common.inactive')}</span>{/if}
-						{#if !a.profiles?.is_active}<span class="badge danger">{t('common.inactive')}</span
-							>{/if}
-					</span>
-					<form method="POST" action="?/setAssignment" use:enhance class="row">
-						<input type="hidden" name="judge_id" value={a.judge_id} />
-						<input type="hidden" name="active" value={a.is_active ? 'false' : 'true'} />
-						{#if data.scoringStarted}<input
-								name="reason"
-								required
-								minlength="3"
-								placeholder={t('common.reason')}
-								aria-label={t('common.reason')}
-							/>{/if}
-						<button class="btn small {a.is_active ? 'ghost' : 'secondary'}" type="submit">
-							{a.is_active ? t('admin.assignments.remove') : t('admin.assignments.restore')}
-						</button>
-					</form>
-				</li>
-			{/each}
-		</ul>
-		<form method="POST" action="?/setAssignment" use:enhance class="stack">
-			<input type="hidden" name="active" value="true" />
-			<label for="add-judge">{t('admin.assignments.select_judge')}</label>
-			<select id="add-judge" name="judge_id" required>
-				{#each data.judges.filter((j) => !assignedIds.has(j.id)) as j (j.id)}
-					<option value={j.id}
-						>{j.display_name} ({j.username}){j.is_active
-							? ''
-							: ' – ' + t('common.inactive')}</option
+		<!-- Judges -->
+		<Tabs.Content value="judges" class="mt-4">
+			<Card.Root class="gap-0 py-0">
+				<Card.Header class="flex flex-row items-center justify-between gap-3 border-b py-4">
+					<Card.Title>{t('admin.events.tab_judges')}</Card.Title>
+					{#if freeJudges.length}
+						<FormDialog action="?/setAssignment" title={t('admin.assignments.add')} size="sm">
+							{#snippet trigger()}<Plus />{t('admin.assignments.add')}{/snippet}
+							<input type="hidden" name="active" value="true" />
+							<div class="grid gap-2">
+								<Label for="add-judge">{t('admin.assignments.select_judge')}</Label>
+								<NativeSelect id="add-judge" name="judge_id" required>
+									{#each freeJudges as j (j.id)}<option value={j.id}
+											>{j.display_name} ({j.username}){j.is_active
+												? ''
+												: ' – ' + t('common.inactive')}</option
+										>{/each}
+								</NativeSelect>
+							</div>
+							<ReasonField show={data.scoringStarted} id="aj-reason" />
+						</FormDialog>
+					{/if}
+				</Card.Header>
+				{#if data.assignments.length === 0}
+					<p class="text-muted-foreground p-6">{t('admin.assignments.none')}</p>
+				{:else}
+					<Table.Root>
+						<Table.Body>
+							{#each data.assignments as a (a.id)}
+								<Table.Row class={a.is_active ? '' : 'opacity-60'}>
+									<Table.Cell class="py-3 whitespace-normal">
+										<div class="font-medium">{a.profiles?.display_name}</div>
+										<div class="text-muted-foreground font-mono text-xs">
+											{a.profiles?.username}
+										</div>
+									</Table.Cell>
+									<Table.Cell>
+										{#if !a.is_active}<Badge variant="neutral">{t('common.inactive')}</Badge>{/if}
+										{#if !a.profiles?.is_active}<Badge variant="destructive"
+												>{t('common.inactive')}</Badge
+											>{/if}
+									</Table.Cell>
+									<Table.Cell class="text-right">
+										<ConfirmForm
+											action="?/setAssignment"
+											label={a.is_active
+												? t('admin.assignments.remove')
+												: t('admin.assignments.restore')}
+											title={`${a.is_active ? t('admin.assignments.remove') : t('admin.assignments.restore')}: ${a.profiles?.display_name}`}
+											message={data.scoringStarted ? t('common.confirm_reason_body') : ''}
+											requireReason={data.scoringStarted}
+											danger={a.is_active}
+											variant={a.is_active ? 'ghost' : 'outline'}
+											size="sm"
+										>
+											{#snippet fields()}
+												<input type="hidden" name="judge_id" value={a.judge_id} />
+												<input type="hidden" name="active" value={a.is_active ? 'false' : 'true'} />
+											{/snippet}
+										</ConfirmForm>
+									</Table.Cell>
+								</Table.Row>
+							{/each}
+						</Table.Body>
+					</Table.Root>
+				{/if}
+			</Card.Root>
+		</Tabs.Content>
+
+		<!-- Participants -->
+		<Tabs.Content value="participants" class="mt-4">
+			<Card.Root class="gap-0 py-0">
+				<Card.Header
+					class="flex flex-row flex-wrap items-center justify-between gap-3 border-b py-4"
+				>
+					<Card.Title>{t('admin.events.tab_participants')}</Card.Title>
+					<div class="flex gap-2">
+						<Button href="/admin/participants/import" variant="outline" size="sm"
+							><Upload />{t('nav.import')}</Button
+						>
+						{#if data.available.length}
+							<FormDialog
+								action="?/setParticipant"
+								title={t('admin.participants.add_to_event')}
+								size="sm"
+							>
+								{#snippet trigger()}<Plus />{t('admin.participants.add_to_event')}{/snippet}
+								<input type="hidden" name="active" value="true" />
+								<div class="grid gap-2">
+									<Label for="add-part">{t('common.participant')}</Label>
+									<NativeSelect id="add-part" name="participant_id" required>
+										{#each data.available as p (p.id)}<option value={p.id}
+												>{p.code} – {p.name}</option
+											>{/each}
+									</NativeSelect>
+								</div>
+								<ReasonField show={data.scoringStarted} id="ap-reason" />
+							</FormDialog>
+						{/if}
+					</div>
+				</Card.Header>
+				{#if data.entries.length === 0}
+					<p class="text-muted-foreground p-6">{t('admin.participants.none')}</p>
+				{:else}
+					<Table.Root>
+						<Table.Body>
+							{#each data.entries as e (e.id)}
+								<Table.Row class={e.is_active ? '' : 'opacity-60'}>
+									<Table.Cell class="py-3 whitespace-normal">
+										<div class="font-medium">{e.participants?.name}</div>
+										<div class="text-muted-foreground font-mono text-xs">
+											{e.participants
+												?.code}{#if e.participants?.affiliation}{` · ${e.participants.affiliation}`}{/if}
+										</div>
+									</Table.Cell>
+									<Table.Cell
+										>{#if !e.is_active}<Badge variant="neutral">{t('common.inactive')}</Badge
+											>{/if}</Table.Cell
+									>
+									<Table.Cell class="text-right">
+										<ConfirmForm
+											action="?/setParticipant"
+											label={e.is_active
+												? t('admin.participants.remove_from_event')
+												: t('admin.assignments.restore')}
+											title={`${e.is_active ? t('admin.participants.remove_from_event') : t('admin.assignments.restore')}: ${e.participants?.name}`}
+											message={data.scoringStarted ? t('common.confirm_reason_body') : ''}
+											requireReason={data.scoringStarted}
+											danger={e.is_active}
+											variant={e.is_active ? 'ghost' : 'outline'}
+											size="sm"
+										>
+											{#snippet fields()}
+												<input type="hidden" name="participant_id" value={e.participants?.id} />
+												<input type="hidden" name="active" value={e.is_active ? 'false' : 'true'} />
+											{/snippet}
+										</ConfirmForm>
+									</Table.Cell>
+								</Table.Row>
+							{/each}
+						</Table.Body>
+					</Table.Root>
+				{/if}
+			</Card.Root>
+		</Tabs.Content>
+
+		<!-- Details -->
+		<Tabs.Content value="details" class="mt-4">
+			<Card.Root>
+				<Card.Content>
+					<form
+						method="POST"
+						action="?/saveEvent"
+						class="grid gap-5"
+						use:enhance={() => {
+							busy = true;
+							return async ({ update }) => {
+								busy = false;
+								await update({ reset: false });
+							};
+						}}
 					>
-				{/each}
-			</select>
-			<ReasonField show={data.scoringStarted} id="aj-reason" />
-			<button class="btn" type="submit">{t('admin.assignments.add')}</button>
-		</form>
-	</section>
-
-	<!-- Participants -->
-	<section class="card stack" aria-labelledby="parts-h">
-		<div class="row between">
-			<h2 id="parts-h">
-				{t('admin.events.tab_participants')} ({data.entries.filter((e) => e.is_active).length})
-			</h2>
-			<a class="btn small secondary" href="/admin/participants/import">{t('nav.import')}</a>
-		</div>
-		<ul class="list">
-			{#each data.entries as e (e.id)}
-				<li class="row between">
-					<span>
-						<strong>{e.participants?.name}</strong>
-						<span class="mono small">{e.participants?.code}</span>
-						{#if !e.is_active}<span class="badge neutral">{t('common.inactive')}</span>{/if}
-					</span>
-					<form method="POST" action="?/setParticipant" use:enhance class="row">
-						<input type="hidden" name="participant_id" value={e.participants?.id} />
-						<input type="hidden" name="active" value={e.is_active ? 'false' : 'true'} />
-						{#if data.scoringStarted}<input
-								name="reason"
-								required
-								minlength="3"
-								placeholder={t('common.reason')}
-								aria-label={t('common.reason')}
-							/>{/if}
-						<button class="btn small {e.is_active ? 'ghost' : 'secondary'}" type="submit">
-							{e.is_active
-								? t('admin.participants.remove_from_event')
-								: t('admin.assignments.restore')}
-						</button>
+						<EventForm event={ev} groups={data.groups} />
+						<ReasonField show={data.scoringStarted} id="e-reason" />
+						<div><Button type="submit" disabled={busy}>{t('common.save')}</Button></div>
 					</form>
-				</li>
-			{/each}
-		</ul>
-		{#if data.available.length}
-			<form method="POST" action="?/setParticipant" use:enhance class="stack">
-				<input type="hidden" name="active" value="true" />
-				<label for="add-part">{t('admin.participants.add_to_event')}</label>
-				<select id="add-part" name="participant_id" required>
-					{#each data.available as p (p.id)}<option value={p.id}>{p.code} – {p.name}</option>{/each}
-				</select>
-				<ReasonField show={data.scoringStarted} id="ap-reason" />
-				<button class="btn" type="submit">{t('common.add')}</button>
-			</form>
-		{/if}
-	</section>
+				</Card.Content>
+			</Card.Root>
+		</Tabs.Content>
+	</Tabs.Root>
 </div>
-
-<style>
-	.crit {
-		border-bottom: 1px solid var(--border);
-		padding-bottom: 1rem;
-	}
-	.crit.inactive {
-		opacity: 0.7;
-	}
-	.list {
-		list-style: none;
-		padding: 0;
-		margin: 0;
-	}
-	.list li {
-		padding: 0.5rem 0;
-		border-bottom: 1px solid var(--border);
-	}
-	.list input[name='reason'] {
-		max-width: 14rem;
-	}
-</style>

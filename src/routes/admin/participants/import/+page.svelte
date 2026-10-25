@@ -1,5 +1,19 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
+	import FileSpreadsheet from '@lucide/svelte/icons/file-spreadsheet';
+	import Download from '@lucide/svelte/icons/download';
+	import CircleCheck from '@lucide/svelte/icons/circle-check';
+	import CircleAlert from '@lucide/svelte/icons/circle-alert';
+	import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import * as Alert from '#lib/components/ui/alert/index.js';
+	import * as Table from '#lib/components/ui/table/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import { Label } from '#lib/components/ui/label/index.js';
+	import { Textarea } from '#lib/components/ui/textarea/index.js';
+	import PageHeader from '#lib/components/app/PageHeader.svelte';
 	import { t } from '#lib/i18n/t.svelte.ts';
 	import { toCsv, type RowError } from '#lib/import/participants.ts';
 
@@ -42,100 +56,137 @@
 
 <svelte:head><title>{t('admin.import.title')}</title></svelte:head>
 
-<div class="stack">
-	<a href="/admin/participants">← {t('admin.participants.title')}</a>
-	<h1>{t('admin.import.title')}</h1>
-	<div class="card stack">
-		<p>{t('admin.import.help')}</p>
-		<p class="mono small">{t('admin.import.columns')}</p>
-		<div class="row">
-			<a class="btn ghost small" href="/admin/participants/import/template?format=csv" download
-				>{t('admin.import.template')} (CSV)</a
-			>
-			<a class="btn ghost small" href="/admin/participants/import/template?format=xlsx" download
-				>{t('admin.import.template')} (Excel)</a
-			>
-		</div>
-		<form
-			method="POST"
-			action="?/preview"
-			enctype="multipart/form-data"
-			use:enhance={busyEnhance}
-			class="stack"
+<div class="grid grid-cols-1 gap-6">
+	<div>
+		<Button href="/admin/participants" variant="ghost" size="sm" class="-ml-2"
+			><ArrowLeft />{t('admin.participants.title')}</Button
 		>
-			<label for="file">{t('admin.import.file')}</label>
-			<input
-				id="file"
-				name="file"
-				type="file"
-				accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-				required
-			/>
-			<button class="btn" type="submit" disabled={busy}>{t('admin.import.preview')}</button>
-		</form>
 	</div>
+	<PageHeader title={t('admin.import.title')} description={t('admin.import.help')} />
+
+	<Card.Root>
+		<Card.Content class="grid gap-5">
+			<div class="bg-muted text-muted-foreground rounded-lg px-4 py-3 font-mono text-sm">
+				{t('admin.import.columns')}
+			</div>
+			<div class="flex flex-wrap gap-2">
+				<Button
+					href="/admin/participants/import/template?format=csv"
+					variant="outline"
+					size="sm"
+					download><Download />{t('admin.import.template')} (CSV)</Button
+				>
+				<Button
+					href="/admin/participants/import/template?format=xlsx"
+					variant="outline"
+					size="sm"
+					download><Download />{t('admin.import.template')} (Excel)</Button
+				>
+			</div>
+			<form
+				method="POST"
+				action="?/preview"
+				enctype="multipart/form-data"
+				use:enhance={busyEnhance}
+				class="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end"
+			>
+				<div class="grid gap-2">
+					<Label for="file">{t('admin.import.file')}</Label>
+					<Input
+						id="file"
+						name="file"
+						type="file"
+						required
+						accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+						class="pt-2"
+					/>
+				</div>
+				<Button type="submit" disabled={busy}><FileSpreadsheet />{t('admin.import.preview')}</Button
+				>
+			</form>
+		</Card.Content>
+	</Card.Root>
 
 	{#if form?.success}
-		<div class="alert success" role="status" data-testid="import-success">{form.success}</div>
+		<Alert.Root variant="success" role="status" data-testid="import-success"
+			><CircleCheck /><Alert.Title>{form.success}</Alert.Title></Alert.Root
+		>
 	{/if}
 	{#if form && 'error' in form && form.error}
-		<div class="alert error" role="alert">{form.error}</div>
+		<Alert.Root variant="destructive" role="alert"
+			><CircleAlert /><Alert.Title>{form.error}</Alert.Title></Alert.Root
+		>
 	{/if}
 
 	{#if errors.length}
-		<section class="card stack" data-testid="import-errors">
-			<div class="row between">
-				<h2>{t('admin.import.rows_error', { n: errors.length })}</h2>
-				<button class="btn secondary small" type="button" onclick={downloadErrors}
-					>{t('admin.import.download_errors')}</button
-				>
-			</div>
-			<p class="alert warning">{t('admin.import.blocked')}</p>
-			<div class="table-wrap">
-				<table>
-					<thead
-						><tr
-							><th>{t('admin.import.row')}</th><th>{t('common.code')}</th><th
-								>{t('admin.import.problem')}</th
-							></tr
-						></thead
+		<Card.Root class="gap-0 py-0" data-testid="import-errors">
+			<Card.Header class="flex flex-row flex-wrap items-center justify-between gap-3 border-b py-4">
+				<div>
+					<Card.Title class="text-destructive"
+						>{t('admin.import.rows_error', { n: errors.length })}</Card.Title
 					>
-					<tbody>
-						{#each errors as e, i (i)}
-							<tr
-								><td>{e.row || '–'}</td><td class="mono">{e.value ?? ''}</td><td>{problem(e)}</td
-								></tr
-							>
-						{/each}
-					</tbody>
-				</table>
-			</div>
-		</section>
+					<Card.Description>{t('admin.import.blocked')}</Card.Description>
+				</div>
+				<Button variant="outline" size="sm" onclick={downloadErrors}
+					><Download />{t('admin.import.download_errors')}</Button
+				>
+			</Card.Header>
+			<Table.Root>
+				<Table.Header
+					><Table.Row
+						><Table.Head>{t('admin.import.row')}</Table.Head><Table.Head
+							>{t('common.code')}</Table.Head
+						><Table.Head>{t('admin.import.problem')}</Table.Head></Table.Row
+					></Table.Header
+				>
+				<Table.Body>
+					{#each errors as e, i (i)}
+						<Table.Row>
+							<Table.Cell>{e.row || '–'}</Table.Cell>
+							<Table.Cell class="font-mono">{e.value ?? ''}</Table.Cell>
+							<Table.Cell class="whitespace-normal">{problem(e)}</Table.Cell>
+						</Table.Row>
+					{/each}
+				</Table.Body>
+			</Table.Root>
+		</Card.Root>
 	{:else if rows.length}
-		<section class="card stack" data-testid="import-preview">
-			<h2>{t('admin.import.rows_ok', { n: rows.length })}</h2>
-			<div class="table-wrap">
-				<table>
-					<thead>
-						<tr
-							><th>{t('admin.import.row')}</th><th>{t('common.code')}</th><th>{t('common.name')}</th
-							><th>{t('common.group')}</th><th>{t('common.event')}</th><th
-								>{t('admin.participants.kind')}</th
-							></tr
-						>
-					</thead>
-					<tbody>
+		<Card.Root class="gap-0 py-0" data-testid="import-preview">
+			<Card.Header class="border-b py-4"
+				><Card.Title class="text-success"
+					>{t('admin.import.rows_ok', { n: rows.length })}</Card.Title
+				></Card.Header
+			>
+			<div class="max-h-[50vh] overflow-auto">
+				<Table.Root>
+					<Table.Header>
+						<Table.Row>
+							<Table.Head>{t('admin.import.row')}</Table.Head><Table.Head
+								>{t('common.code')}</Table.Head
+							><Table.Head>{t('common.name')}</Table.Head>
+							<Table.Head>{t('common.group')}</Table.Head><Table.Head
+								>{t('common.event')}</Table.Head
+							><Table.Head>{t('admin.participants.kind')}</Table.Head>
+						</Table.Row>
+					</Table.Header>
+					<Table.Body>
 						{#each rows.slice(0, 200) as r (r.row)}
-							<tr
-								><td>{r.row}</td><td class="mono">{r.code}</td><td>{r.name}</td><td
-									>{r.group_code}</td
-								><td>{r.event_code}</td><td>{r.kind}</td></tr
-							>
+							<Table.Row>
+								<Table.Cell>{r.row}</Table.Cell><Table.Cell class="font-mono">{r.code}</Table.Cell
+								><Table.Cell>{r.name}</Table.Cell>
+								<Table.Cell>{r.group_code}</Table.Cell><Table.Cell>{r.event_code}</Table.Cell
+								><Table.Cell>{r.kind}</Table.Cell>
+							</Table.Row>
 						{/each}
-					</tbody>
-				</table>
+					</Table.Body>
+				</Table.Root>
 			</div>
-			<form method="POST" action="?/confirm" use:enhance={busyEnhance} class="stack">
+			<form
+				method="POST"
+				action="?/confirm"
+				use:enhance={busyEnhance}
+				class="grid gap-4 border-t p-5"
+			>
 				<input type="hidden" name="rows" value={JSON.stringify(rows)} />
 				<input
 					type="hidden"
@@ -143,17 +194,28 @@
 					value={form && 'fileName' in form ? form.fileName : ''}
 				/>
 				{#if scored.length}
-					<div class="alert warning stack">
-						<strong>{t('common.confirm_reason_title')}</strong>
-						<p>{scored.join(', ')}</p>
-						<label for="imp-reason">{t('common.reason')}</label>
-						<textarea id="imp-reason" name="reason" required minlength="3"></textarea>
-					</div>
+					<Alert.Root variant="warning">
+						<TriangleAlert />
+						<Alert.Title>{t('common.confirm_reason_title')}</Alert.Title>
+						<Alert.Description class="w-full">
+							<p>{scored.join(', ')}</p>
+							<Label for="imp-reason" class="mt-2">{t('common.reason')}</Label>
+							<Textarea
+								id="imp-reason"
+								name="reason"
+								required
+								minlength={3}
+								class="bg-background mt-1"
+							/>
+						</Alert.Description>
+					</Alert.Root>
 				{/if}
-				<button class="btn large" type="submit" disabled={busy}
-					>{t('admin.import.confirm', { n: rows.length })}</button
-				>
+				<div>
+					<Button type="submit" size="lg" disabled={busy}
+						>{t('admin.import.confirm', { n: rows.length })}</Button
+					>
+				</div>
 			</form>
-		</section>
+		</Card.Root>
 	{/if}
 </div>

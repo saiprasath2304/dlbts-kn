@@ -1,5 +1,9 @@
 <script lang="ts">
-	import StatusBadge from '#lib/components/StatusBadge.svelte';
+	import CircleCheckBig from '@lucide/svelte/icons/circle-check-big';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import * as Table from '#lib/components/ui/table/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import StatusBadge from '#lib/components/app/StatusBadge.svelte';
 	import { t, locale } from '#lib/i18n/t.svelte.ts';
 	import { formatDateTime } from '#lib/i18n/index.ts';
 	import { formatMark } from '#lib/scoring.ts';
@@ -11,48 +15,72 @@
 
 <svelte:head><title>{t('submit.receipt')}</title></svelte:head>
 
-<div class="stack">
+<div class="grid grid-cols-1 gap-5">
 	{#if data.justSubmitted}
-		<div class="alert success" role="status" data-testid="submit-success">
-			<h1 style="margin: 0">✓ {t('submit.success_title')}</h1>
+		<div
+			class="border-success/30 bg-success/8 text-success flex items-center gap-3 rounded-xl border p-5"
+			role="status"
+			data-testid="submit-success"
+		>
+			<CircleCheckBig class="size-8 shrink-0" />
+			<h1 class="text-2xl font-bold">{t('submit.success_title')}</h1>
 		</div>
 	{/if}
-	<div class="card stack">
-		<h2>{t('submit.receipt')}</h2>
-		<div class="row"><StatusBadge status={data.submission.status} /></div>
-		<p><strong>{data.event.name}</strong> – {data.group.name}</p>
-		{#if data.latest}
-			<p>
-				{t('submit.success_body', {
-					event: data.event.name,
-					time: formatDateTime(locale(), data.latest.submitted_at)
-				})}
-			</p>
-			<p>{t('submit.round', { n: data.latest.round })}</p>
-		{/if}
-		<p>{t('submit.participant_count', { n: data.participants.length })}</p>
-	</div>
+	<Card.Root>
+		<Card.Header>
+			<div class="flex flex-wrap items-center justify-between gap-2">
+				<Card.Title class="text-xl">{t('submit.receipt')}</Card.Title>
+				<StatusBadge status={data.submission.status} />
+			</div>
+			<Card.Description class="text-base">{data.event.name} – {data.group.name}</Card.Description>
+		</Card.Header>
+		<Card.Content class="grid gap-1">
+			{#if data.latest}
+				<p>
+					{t('submit.success_body', {
+						event: data.event.name,
+						time: formatDateTime(locale(), data.latest.submitted_at)
+					})}
+				</p>
+				<p class="text-muted-foreground">
+					{t('submit.round', { n: data.latest.round })} · {t('submit.participant_count', {
+						n: data.participants.length
+					})}
+				</p>
+			{/if}
+		</Card.Content>
+	</Card.Root>
 
 	{#if data.latest}
-		<div class="table-wrap">
-			<table>
-				<thead>
-					<tr><th>{t('common.participant')}</th><th class="num">{t('score.total')}</th></tr>
-				</thead>
-				<tbody>
+		<Card.Root class="py-0">
+			<Table.Root>
+				<Table.Header>
+					<Table.Row
+						><Table.Head>{t('common.participant')}</Table.Head><Table.Head class="text-right"
+							>{t('score.total')}</Table.Head
+						></Table.Row
+					>
+				</Table.Header>
+				<Table.Body>
 					{#each data.participants as p (p.id)}
-						<tr>
-							<td>{p.name} <span class="small muted">({p.code})</span></td>
-							<td class="num">{formatMark(Number(totals[p.id] ?? 0))} / {formatMark(max)}</td>
-						</tr>
+						<Table.Row>
+							<Table.Cell class="whitespace-normal"
+								>{p.name} <span class="text-muted-foreground text-sm">({p.code})</span></Table.Cell
+							>
+							<Table.Cell class="text-right font-semibold tabular-nums"
+								>{formatMark(Number(totals[p.id] ?? 0))} / {formatMark(max)}</Table.Cell
+							>
+						</Table.Row>
 					{/each}
-				</tbody>
-			</table>
-		</div>
+				</Table.Body>
+			</Table.Root>
+		</Card.Root>
 	{/if}
 
-	<div class="row">
-		<a class="btn secondary" href="/judge/events/{data.event.id}">{t('judge.view_submission')}</a>
-		<a class="btn ghost" href="/judge">{t('nav.my_events')}</a>
+	<div class="flex flex-wrap gap-2">
+		<Button href="/judge/events/{data.event.id}" variant="outline"
+			>{t('judge.view_submission')}</Button
+		>
+		<Button href="/judge" variant="ghost">{t('nav.my_events')}</Button>
 	</div>
 </div>

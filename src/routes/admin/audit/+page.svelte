@@ -1,12 +1,21 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import * as Table from '#lib/components/ui/table/index.js';
+	import * as Collapsible from '#lib/components/ui/collapsible/index.js';
+	import { Badge } from '#lib/components/ui/badge/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import { Label } from '#lib/components/ui/label/index.js';
+	import PageHeader from '#lib/components/app/PageHeader.svelte';
+	import NativeSelect from '#lib/components/app/NativeSelect.svelte';
 	import { t, locale } from '#lib/i18n/t.svelte.ts';
 	import { formatDateTime } from '#lib/i18n/index.ts';
 
 	let { data } = $props();
 	const who = (id: string | null) => {
 		const p = data.people.find((x) => x.id === id);
-		return p ? `${p.display_name} (${p.username})` : id ? id.slice(0, 8) : '–';
+		return p ? p.display_name : id ? id.slice(0, 8) : '–';
 	};
 	const eventName = (id: string | null) =>
 		data.groups.flatMap((g) => g.events).find((e) => e.id === id)?.name ?? '';
@@ -19,104 +28,131 @@
 
 <svelte:head><title>{t('admin.audit.title')}</title></svelte:head>
 
-<div class="stack">
-	<h1>{t('admin.audit.title')}</h1>
-	<form method="GET" class="card form-grid">
-		<div>
-			<label for="a-from">{t('common.from')}</label><input
-				id="a-from"
-				name="from"
-				type="date"
-				value={data.filters.from}
-			/>
-		</div>
-		<div>
-			<label for="a-to">{t('common.to')}</label><input
-				id="a-to"
-				name="to"
-				type="date"
-				value={data.filters.to}
-			/>
-		</div>
-		<div>
-			<label for="a-actor">{t('admin.audit.actor')}</label>
-			<select id="a-actor" name="actor" value={data.filters.actor}>
-				<option value="">{t('common.all')}</option>
-				{#each data.people as p (p.id)}<option value={p.id}>{p.display_name} ({p.username})</option
-					>{/each}
-			</select>
-		</div>
-		<div>
-			<label for="a-event">{t('common.event')}</label>
-			<select id="a-event" name="event" value={data.filters.event}>
-				<option value="">{t('common.all')}</option>
-				{#each data.groups as g (g.id)}<optgroup label={g.name}
-						>{#each g.events as e (e.id)}<option value={e.id}>{e.name}</option>{/each}</optgroup
-					>{/each}
-			</select>
-		</div>
-		<div>
-			<label for="a-part">{t('common.participant')} ({t('common.code')})</label><input
-				id="a-part"
-				name="participant"
-				value={data.filters.participant}
-			/>
-		</div>
-		<div>
-			<label for="a-action">{t('admin.audit.action')}</label>
-			<select id="a-action" name="action" value={data.filters.action}>
-				<option value="">{t('common.all')}</option>
-				{#each data.actions as a (a)}<option value={a}>{a}</option>{/each}
-			</select>
-		</div>
-		<button class="btn secondary" type="submit">{t('common.filter')}</button>
-	</form>
+<div class="grid grid-cols-1 gap-6">
+	<PageHeader title={t('admin.audit.title')} />
+	<Card.Root>
+		<Card.Content>
+			<form method="GET" class="grid items-end gap-4 sm:grid-cols-2 lg:grid-cols-3">
+				<div class="grid gap-2">
+					<Label for="a-from">{t('common.from')}</Label><Input
+						id="a-from"
+						name="from"
+						type="date"
+						value={data.filters.from}
+					/>
+				</div>
+				<div class="grid gap-2">
+					<Label for="a-to">{t('common.to')}</Label><Input
+						id="a-to"
+						name="to"
+						type="date"
+						value={data.filters.to}
+					/>
+				</div>
+				<div class="grid gap-2">
+					<Label for="a-actor">{t('admin.audit.actor')}</Label>
+					<NativeSelect id="a-actor" name="actor" value={data.filters.actor}>
+						<option value="">{t('common.all')}</option>
+						{#each data.people as p (p.id)}<option value={p.id}
+								>{p.display_name} ({p.username})</option
+							>{/each}
+					</NativeSelect>
+				</div>
+				<div class="grid gap-2">
+					<Label for="a-event">{t('common.event')}</Label>
+					<NativeSelect id="a-event" name="event" value={data.filters.event}>
+						<option value="">{t('common.all')}</option>
+						{#each data.groups as g (g.id)}<optgroup label={g.name}
+								>{#each g.events as e (e.id)}<option value={e.id}>{e.name}</option>{/each}</optgroup
+							>{/each}
+					</NativeSelect>
+				</div>
+				<div class="grid gap-2">
+					<Label for="a-part">{t('common.participant')} ({t('common.code')})</Label><Input
+						id="a-part"
+						name="participant"
+						value={data.filters.participant}
+					/>
+				</div>
+				<div class="grid gap-2">
+					<Label for="a-action">{t('admin.audit.action')}</Label>
+					<NativeSelect id="a-action" name="action" value={data.filters.action}>
+						<option value="">{t('common.all')}</option>
+						{#each data.actions as a (a)}<option value={a}>{a}</option>{/each}
+					</NativeSelect>
+				</div>
+				<div><Button type="submit" variant="secondary">{t('common.filter')}</Button></div>
+			</form>
+		</Card.Content>
+	</Card.Root>
 
-	{#if data.rows.length === 0}<p class="muted">{t('admin.audit.none')}</p>{/if}
-	<div class="table-wrap">
-		<table>
-			<thead
-				><tr
-					><th>{t('admin.audit.time')}</th><th>{t('admin.audit.action')}</th><th
-						>{t('admin.audit.actor')}</th
-					><th>{t('admin.audit.details')}</th></tr
-				></thead
-			>
-			<tbody>
-				{#each data.rows as r (r.id)}
-					<tr>
-						<td class="small nowrap">{formatDateTime(locale(), r.created_at)}</td>
-						<td class="mono small">{r.action}</td>
-						<td class="small">{who(r.actor_id)}<br /><span class="muted">{r.actor_role}</span></td>
-						<td class="small">
-							{#if r.event_id}<div>{t('common.event')}: {eventName(r.event_id)}</div>{/if}
-							{#if r.judge_id}<div>{t('common.judge')}: {who(r.judge_id)}</div>{/if}
-							{#if r.reason}<div><strong>{t('common.reason')}:</strong> {r.reason}</div>{/if}
-							{#if r.old_value || r.new_value || Object.keys(r.metadata ?? {}).length}
-								<details>
-									<summary>{t('admin.audit.details')}</summary>
-									{#if r.old_value}<pre class="json">- {JSON.stringify(
-												r.old_value,
-												null,
-												1
-											)}</pre>{/if}
-									{#if r.new_value}<pre class="json">+ {JSON.stringify(
-												r.new_value,
-												null,
-												1
-											)}</pre>{/if}
-									{#if Object.keys(r.metadata ?? {}).length}<pre class="json">{JSON.stringify(
-												r.metadata,
-												null,
-												1
-											)}</pre>{/if}
-								</details>
-							{/if}
-						</td>
-					</tr>
-				{/each}
-			</tbody>
-		</table>
-	</div>
-	{#if data.next}<a class="btn secondary" href={nextHref}>{t('admin.audit.older')}</a>{/if}
+	<Card.Root class="py-0">
+		{#if data.rows.length === 0}
+			<p class="text-muted-foreground p-6">{t('admin.audit.none')}</p>
+		{:else}
+			<Table.Root>
+				<Table.Header>
+					<Table.Row
+						><Table.Head>{t('admin.audit.time')}</Table.Head><Table.Head
+							>{t('admin.audit.action')}</Table.Head
+						><Table.Head>{t('admin.audit.actor')}</Table.Head><Table.Head
+							>{t('admin.audit.details')}</Table.Head
+						></Table.Row
+					>
+				</Table.Header>
+				<Table.Body>
+					{#each data.rows as r (r.id)}
+						<Table.Row>
+							<Table.Cell class="text-muted-foreground align-top text-xs whitespace-nowrap"
+								>{formatDateTime(locale(), r.created_at)}</Table.Cell
+							>
+							<Table.Cell class="align-top"
+								><Badge variant="outline" class="font-mono">{r.action}</Badge></Table.Cell
+							>
+							<Table.Cell class="align-top text-sm whitespace-normal"
+								>{who(r.actor_id)}
+								<div class="text-muted-foreground text-xs">{r.actor_role}</div></Table.Cell
+							>
+							<Table.Cell class="align-top text-sm whitespace-normal">
+								{#if r.event_id}<div>{t('common.event')}: {eventName(r.event_id)}</div>{/if}
+								{#if r.judge_id}<div>{t('common.judge')}: {who(r.judge_id)}</div>{/if}
+								{#if r.reason}<div><strong>{t('common.reason')}:</strong> {r.reason}</div>{/if}
+								{#if r.old_value || r.new_value || Object.keys(r.metadata ?? {}).length}
+									<Collapsible.Root>
+										<Collapsible.Trigger
+											class="text-primary text-sm underline-offset-4 hover:underline"
+											>{t('admin.audit.details')}</Collapsible.Trigger
+										>
+										<Collapsible.Content>
+											{#if r.old_value}<pre
+													class="bg-muted mt-1 max-h-64 overflow-auto rounded p-2 text-xs">- {JSON.stringify(
+														r.old_value,
+														null,
+														1
+													)}</pre>{/if}
+											{#if r.new_value}<pre
+													class="bg-muted mt-1 max-h-64 overflow-auto rounded p-2 text-xs">+ {JSON.stringify(
+														r.new_value,
+														null,
+														1
+													)}</pre>{/if}
+											{#if Object.keys(r.metadata ?? {}).length}<pre
+													class="bg-muted mt-1 max-h-64 overflow-auto rounded p-2 text-xs">{JSON.stringify(
+														r.metadata,
+														null,
+														1
+													)}</pre>{/if}
+										</Collapsible.Content>
+									</Collapsible.Root>
+								{/if}
+							</Table.Cell>
+						</Table.Row>
+					{/each}
+				</Table.Body>
+			</Table.Root>
+		{/if}
+	</Card.Root>
+	{#if data.next}<div>
+			<Button href={nextHref} variant="outline">{t('admin.audit.older')}</Button>
+		</div>{/if}
 </div>

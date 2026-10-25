@@ -2,9 +2,28 @@
 	import { onMount, untrack } from 'svelte';
 	import { enhance } from '$app/forms';
 	import { beforeNavigate, invalidateAll } from '$app/navigation';
-	import StatusBadge from '#lib/components/StatusBadge.svelte';
-	import SaveIndicator from '#lib/components/SaveIndicator.svelte';
-	import Flash from '#lib/components/Flash.svelte';
+	import ArrowRight from '@lucide/svelte/icons/arrow-right';
+	import BellRing from '@lucide/svelte/icons/bell-ring';
+	import CircleCheck from '@lucide/svelte/icons/circle-check';
+	import Clock from '@lucide/svelte/icons/clock';
+	import History from '@lucide/svelte/icons/history';
+	import Info from '@lucide/svelte/icons/info';
+	import Lock from '@lucide/svelte/icons/lock';
+	import Search from '@lucide/svelte/icons/search';
+	import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
+	import * as Alert from '#lib/components/ui/alert/index.js';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import * as Collapsible from '#lib/components/ui/collapsible/index.js';
+	import { Badge } from '#lib/components/ui/badge/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import { Label } from '#lib/components/ui/label/index.js';
+	import { Progress } from '#lib/components/ui/progress/index.js';
+	import { Textarea } from '#lib/components/ui/textarea/index.js';
+	import { cn } from '#lib/utils.js';
+	import StatusBadge from '#lib/components/app/StatusBadge.svelte';
+	import SaveIndicator from '#lib/components/app/SaveIndicator.svelte';
+	import FormFeedback from '#lib/components/app/FormFeedback.svelte';
 	import { t, locale } from '#lib/i18n/t.svelte.ts';
 	import { formatDateTime } from '#lib/i18n/index.ts';
 	import { formatMark, parseMark, participantTotal, type MarkError } from '#lib/scoring.ts';
@@ -153,143 +172,193 @@
 
 <svelte:head><title>{data.event.name} – {t('score.title')}</title></svelte:head>
 
-<div class="stack">
-	<div class="row between">
-		<div>
-			<div class="muted">{data.group.name}</div>
-			<h1 style="margin: 0">{data.event.name}</h1>
+<div class="grid grid-cols-1 gap-5 pb-4">
+	<div class="flex items-start justify-between gap-3">
+		<div class="min-w-0">
+			<p class="text-muted-foreground text-sm font-medium">{data.group.name}</p>
+			<h1 class="text-2xl font-bold tracking-tight">{data.event.name}</h1>
 		</div>
 		<StatusBadge {status} />
 	</div>
 
-	<Flash {form} />
+	<FormFeedback {form} />
 
 	{#if sync.recovered > 0}
-		<div class="alert info" role="status">{t('save.recovered', { n: sync.recovered })}</div>
+		<Alert.Root variant="info" role="status"
+			><History /><Alert.Title>{t('save.recovered', { n: sync.recovered })}</Alert.Title
+			></Alert.Root
+		>
 	{/if}
 
 	{#each sync.conflicts as c (c.key)}
-		<div class="alert warning stack" role="alert">
-			<strong>{t('save.conflict_title')}</strong>
-			<p>
-				{t('save.conflict_body', {
-					participant: nameOf(c.participant_id),
-					criterion: criterionName(c.criterion_id),
-					mine: shown(c.mine),
-					theirs: shown(c.theirs),
-					time: formatDateTime(locale(), c.theirs_at)
-				})}
-			</p>
-			<div class="row">
-				<button class="btn" type="button" onclick={() => resolve(c, 'mine')}
-					>{t('save.keep_mine', { value: shown(c.mine) })}</button
-				>
-				<button class="btn secondary" type="button" onclick={() => resolve(c, 'server')}
-					>{t('save.keep_server', { value: shown(c.theirs) })}</button
-				>
-			</div>
-		</div>
+		<Alert.Root variant="warning" role="alert">
+			<TriangleAlert />
+			<Alert.Title>{t('save.conflict_title')}</Alert.Title>
+			<Alert.Description>
+				<p>
+					{t('save.conflict_body', {
+						participant: nameOf(c.participant_id),
+						criterion: criterionName(c.criterion_id),
+						mine: shown(c.mine),
+						theirs: shown(c.theirs),
+						time: formatDateTime(locale(), c.theirs_at)
+					})}
+				</p>
+				<div class="mt-2 flex flex-wrap gap-2">
+					<Button onclick={() => resolve(c, 'mine')}
+						>{t('save.keep_mine', { value: shown(c.mine) })}</Button
+					>
+					<Button variant="outline" onclick={() => resolve(c, 'server')}
+						>{t('save.keep_server', { value: shown(c.theirs) })}</Button
+					>
+				</div>
+			</Alert.Description>
+		</Alert.Root>
 	{/each}
 
 	{#each openCorrections as c (c.id)}
-		<div class="alert warning stack">
-			<strong>{t('judge.action_required')}</strong>
-			<p>{t('request.correction_from_admin', { message: c.message })}</p>
-			{#if c.participant_id || c.criterion_ids.length}
-				<p class="small">
-					{t('request.correction_scope', {
-						participant: c.participant_id ? nameOf(c.participant_id) : t('common.all'),
-						criteria: c.criterion_ids.length
-							? c.criterion_ids.map(criterionName).join(', ')
-							: t('common.all')
-					})}
-				</p>
-			{/if}
-			{#if c.judge_response}
-				<p class="small"><strong>{t('admin.requests.judge_reply')}:</strong> {c.judge_response}</p>
-			{/if}
-			<form method="POST" action="?/respondCorrection" use:enhance class="stack">
-				<input type="hidden" name="request_id" value={c.id} />
-				<label for="resp-{c.id}">{t('request.respond')}</label>
-				<textarea
-					id="resp-{c.id}"
-					name="response"
-					required
-					placeholder={t('request.respond_placeholder')}></textarea>
-				<button class="btn secondary" type="submit">{t('request.respond')}</button>
-			</form>
-		</div>
+		<Alert.Root variant="warning">
+			<BellRing />
+			<Alert.Title>{t('judge.action_required')}</Alert.Title>
+			<Alert.Description class="w-full">
+				<p>{t('request.correction_from_admin', { message: c.message })}</p>
+				{#if c.participant_id || c.criterion_ids.length}
+					<p class="text-sm">
+						{t('request.correction_scope', {
+							participant: c.participant_id ? nameOf(c.participant_id) : t('common.all'),
+							criteria: c.criterion_ids.length
+								? c.criterion_ids.map(criterionName).join(', ')
+								: t('common.all')
+						})}
+					</p>
+				{/if}
+				{#if c.judge_response}
+					<p class="text-sm">
+						<strong>{t('admin.requests.judge_reply')}:</strong>
+						{c.judge_response}
+					</p>
+				{/if}
+				<form method="POST" action="?/respondCorrection" use:enhance class="mt-2 grid w-full gap-2">
+					<input type="hidden" name="request_id" value={c.id} />
+					<Label for="resp-{c.id}">{t('request.respond')}</Label>
+					<Textarea
+						id="resp-{c.id}"
+						name="response"
+						required
+						placeholder={t('request.respond_placeholder')}
+						class="bg-background"
+					/>
+					<div><Button type="submit" variant="outline">{t('request.respond')}</Button></div>
+				</form>
+			</Alert.Description>
+		</Alert.Root>
 	{/each}
 
-	<details class="card about" open={status === 'not_started'}>
-		<summary><strong>{t('judge.about_event')}</strong></summary>
-		{#if data.event.description}<p class="muted">{data.event.description}</p>{/if}
-		{#if data.event.instructions}<p class="pre">{data.event.instructions}</p>{/if}
-		<p class="small muted">{t('judge.total_max', { max: formatMark(criteriaMax) })}</p>
-		<ul class="crit-list">
-			{#each data.criteria as c (c.id)}
-				<li>
-					<span
-						>{c.name}{#if c.description}<span class="muted small">&nbsp;– {c.description}</span
-							>{/if}</span
-					><strong>{formatMark(c.max_marks)}</strong>
-				</li>
-			{/each}
-		</ul>
-	</details>
+	<Collapsible.Root open={status === 'not_started'}>
+		<Card.Root class="gap-0 py-0">
+			<Collapsible.Trigger
+				class="flex w-full items-center justify-between gap-3 px-5 py-4 text-left font-semibold"
+			>
+				<span class="inline-flex items-center gap-2"
+					><Info class="text-primary size-5" />{t('judge.about_event')}</span
+				>
+				<span class="text-muted-foreground text-sm font-normal"
+					>{t('judge.total_max', { max: formatMark(criteriaMax) })}</span
+				>
+			</Collapsible.Trigger>
+			<Collapsible.Content>
+				<div class="grid gap-3 border-t px-5 py-4">
+					{#if data.event.description}<p class="text-muted-foreground">
+							{data.event.description}
+						</p>{/if}
+					{#if data.event.instructions}<p class="whitespace-pre-wrap">
+							{data.event.instructions}
+						</p>{/if}
+					<ul class="divide-y rounded-lg border">
+						{#each data.criteria as c (c.id)}
+							<li class="flex items-center justify-between gap-3 px-3 py-2">
+								<span
+									>{c.name}{#if c.description}<span class="text-muted-foreground text-sm"
+											>&nbsp;– {c.description}</span
+										>{/if}</span
+								>
+								<Badge variant="secondary" class="text-sm">{formatMark(c.max_marks)}</Badge>
+							</li>
+						{/each}
+					</ul>
+				</div>
+			</Collapsible.Content>
+		</Card.Root>
+	</Collapsible.Root>
 
 	{#if !editable}
-		<div class="alert info stack" data-testid="locked-notice">
-			<p>{t('score.locked')}</p>
-			{#if data.submission.submitted_at && isSubmitted(status)}
-				<p class="small">
-					{t('submit.success_body', {
-						event: data.event.name,
-						time: formatDateTime(locale(), data.submission.submitted_at)
-					})}
-				</p>
-			{/if}
-			{#if lastDecision?.status === 'rejected' && !pendingReopen}
-				<p class="alert warning" data-testid="reopen-rejected">
-					{t('request.reopen_title')}: <strong>{t('request.rejected')}</strong>
-					{#if lastDecision.resolution_note}– {lastDecision.resolution_note}{/if}
-				</p>
-			{/if}
-			{#if pendingReopen}
-				<p><span class="badge warning">{t('request.pending')}</span> {pendingReopen.reason}</p>
-			{:else if isSubmitted(status)}
-				<form
-					method="POST"
-					action="?/requestReopen"
-					class="stack"
-					use:enhance={() => {
-						busy = true;
-						return async ({ update }) => {
-							busy = false;
-							await update();
-							await invalidateAll();
-						};
-					}}
+		<Card.Root data-testid="locked-notice" class="border-primary/30">
+			<Card.Header>
+				<Card.Title class="flex items-center gap-2 text-lg"
+					><Lock class="text-primary size-5" />{t('score.locked')}</Card.Title
 				>
-					<h2>{t('request.reopen_title')}</h2>
-					<p class="small">{t('request.reopen_help')}</p>
-					<label for="reopen-reason">{t('common.reason')}</label>
-					<textarea id="reopen-reason" name="reason" required minlength="3"></textarea>
-					<button class="btn secondary" type="submit" disabled={busy}
-						>{t('request.reopen_button')}</button
+				{#if data.submission.submitted_at && isSubmitted(status)}
+					<Card.Description class="text-base">
+						{t('submit.success_body', {
+							event: data.event.name,
+							time: formatDateTime(locale(), data.submission.submitted_at)
+						})}
+					</Card.Description>
+				{/if}
+			</Card.Header>
+			<Card.Content class="grid gap-4">
+				{#if lastDecision?.status === 'rejected' && !pendingReopen}
+					<Alert.Root variant="warning" data-testid="reopen-rejected">
+						<Alert.Title>{t('request.reopen_title')}: {t('request.rejected')}</Alert.Title>
+						{#if lastDecision.resolution_note}<Alert.Description
+								>{lastDecision.resolution_note}</Alert.Description
+							>{/if}
+					</Alert.Root>
+				{/if}
+				{#if pendingReopen}
+					<Alert.Root variant="info">
+						<Clock />
+						<Alert.Title>{t('request.pending')}</Alert.Title>
+						<Alert.Description>{pendingReopen.reason}</Alert.Description>
+					</Alert.Root>
+				{:else if isSubmitted(status)}
+					<form
+						method="POST"
+						action="?/requestReopen"
+						class="grid gap-3"
+						use:enhance={() => {
+							busy = true;
+							return async ({ update }) => {
+								busy = false;
+								await update();
+								await invalidateAll();
+							};
+						}}
 					>
-				</form>
-			{/if}
-		</div>
+						<div>
+							<h2 class="font-semibold">{t('request.reopen_title')}</h2>
+							<p class="text-muted-foreground text-sm">{t('request.reopen_help')}</p>
+						</div>
+						<Label for="reopen-reason">{t('common.reason')}</Label>
+						<Textarea id="reopen-reason" name="reason" required minlength={3} />
+						<div>
+							<Button type="submit" variant="outline" disabled={busy}
+								>{t('request.reopen_button')}</Button
+							>
+						</div>
+					</form>
+				{/if}
+			</Card.Content>
+		</Card.Root>
 	{/if}
 
 	{#if data.criteria.length === 0}
-		<div class="alert info">{t('score.no_criteria')}</div>
+		<Alert.Root variant="info"><Alert.Title>{t('score.no_criteria')}</Alert.Title></Alert.Root>
 	{:else if data.participants.length === 0}
-		<div class="alert info">{t('score.no_participants')}</div>
+		<Alert.Root variant="info"><Alert.Title>{t('score.no_participants')}</Alert.Title></Alert.Root>
 	{:else}
 		{#if editable}
-			<div class="sticky-status">
+			<div class="bg-background/95 sticky top-0 z-20 -mx-1 px-1 py-1 backdrop-blur sm:top-[61px]">
 				<SaveIndicator
 					state={sync.state}
 					lastSavedAt={sync.lastSavedAt}
@@ -300,205 +369,133 @@
 		{/if}
 
 		{#if data.participants.length > 6}
-			<div class="field">
-				<label for="find">{t('score.search')}</label>
-				<input id="find" type="search" bind:value={query} autocomplete="off" />
+			<div class="relative">
+				<Search class="text-muted-foreground pointer-events-none absolute top-3 left-3 size-5" />
+				<Label for="find" class="sr-only">{t('score.search')}</Label>
+				<Input
+					id="find"
+					type="search"
+					bind:value={query}
+					autocomplete="off"
+					placeholder={t('score.search')}
+					class="pl-10"
+				/>
 			</div>
 		{/if}
 
-		<ol class="participants" role="list">
-			{#each visible as p (p.id)}
+		<ol class="grid gap-4" role="list">
+			{#each visible as p, idx (p.id)}
 				{@const total = totals[p.id]}
-				<li class="card participant" class:complete={total.complete} data-testid="participant-card">
-					<div class="row between">
-						<div>
-							<h2 class="pname">{p.name}</h2>
-							<div class="muted small">
-								{t('score.participant_code', {
-									code: p.code
-								})}{#if p.affiliation}{` · ${p.affiliation}`}{/if}
-							</div>
-						</div>
-						<div
-							class="total"
-							aria-label="{t('score.total')} {total.total} / {total.max}"
-							data-testid="participant-total"
-						>
-							<span class="small muted">{t('score.total')}</span>
-							<span class="big"
-								>{formatMark(total.total)}&nbsp;<span class="muted"
-									>/&nbsp;{formatMark(total.max)}</span
-								></span
-							>
-						</div>
-					</div>
-					<div class="marks">
-						{#each data.criteria as c (c.id)}
-							{@const k = key(p.id, c.id)}
-							{@const err = errors[k]}
-							<div class="mark">
-								<label for="m-{k}">{c.name}</label>
-								<div class="input-row">
-									<input
-										id="m-{k}"
-										data-score
-										type="text"
-										inputmode={precision === 0 ? 'numeric' : 'decimal'}
-										enterkeyhint="next"
-										autocomplete="off"
-										aria-label={t('score.input_label', {
-											criterion: c.name,
-											participant: p.name,
-											max: formatMark(c.max_marks)
-										})}
-										aria-invalid={err ? 'true' : undefined}
-										aria-describedby={err ? `e-${k}` : undefined}
-										value={inputs[k] ?? ''}
-										readonly={!editable}
-										oninput={(e) => onInput(p.id, c.id, c.max_marks, e.currentTarget.value)}
-										onblur={() => onBlur(p.id, c.id, c.max_marks)}
-										onkeydown={onKeydown}
-									/>
-									<span class="max" aria-hidden="true">/ {formatMark(c.max_marks)}</span>
+				<li>
+					<Card.Root
+						data-testid="participant-card"
+						class={cn('gap-4 border-2 transition-colors', total.complete && 'border-success/50')}
+					>
+						<Card.Header class="flex flex-row items-start justify-between gap-3">
+							<div class="flex min-w-0 items-start gap-3">
+								<span
+									class="bg-secondary text-secondary-foreground grid size-9 shrink-0 place-items-center rounded-full text-sm font-bold"
+									>{idx + 1}</span
+								>
+								<div class="min-w-0">
+									<h2 class="text-xl leading-tight font-bold">{p.name}</h2>
+									<p class="text-muted-foreground text-sm">
+										{t('score.participant_code', {
+											code: p.code
+										})}{#if p.affiliation}{` · ${p.affiliation}`}{/if}
+									</p>
 								</div>
-								{#if err}
-									<div class="field-error" id="e-{k}" role="alert">
-										{errorText(err, c.max_marks)}
-									</div>
-								{/if}
 							</div>
-						{/each}
-					</div>
-					<div class="small" class:muted={!total.complete}>
-						{total.complete
-							? '✓ ' + t('score.complete')
-							: t('score.incomplete', { n: total.required - total.filled })}
-					</div>
+							<div
+								class="shrink-0 text-right"
+								data-testid="participant-total"
+								aria-label="{t('score.total')} {total.total} / {total.max}"
+							>
+								<div class="text-muted-foreground text-xs font-medium uppercase">
+									{t('score.total')}
+								</div>
+								<div class="text-2xl font-bold tabular-nums">
+									{formatMark(total.total)}<span
+										class="text-muted-foreground text-base font-semibold"
+										>&nbsp;/&nbsp;{formatMark(total.max)}</span
+									>
+								</div>
+							</div>
+						</Card.Header>
+						<Card.Content class="grid grid-cols-2 gap-x-3 gap-y-4">
+							{#each data.criteria as c (c.id)}
+								{@const k = key(p.id, c.id)}
+								{@const err = errors[k]}
+								<div class="grid gap-1.5">
+									<Label for="m-{k}" class="text-base">{c.name}</Label>
+									<div class="flex items-center gap-2">
+										<Input
+											id="m-{k}"
+											data-score
+											type="text"
+											inputmode={precision === 0 ? 'numeric' : 'decimal'}
+											enterkeyhint="next"
+											autocomplete="off"
+											aria-label={t('score.input_label', {
+												criterion: c.name,
+												participant: p.name,
+												max: formatMark(c.max_marks)
+											})}
+											aria-invalid={err ? 'true' : undefined}
+											aria-describedby={err ? `e-${k}` : undefined}
+											value={inputs[k] ?? ''}
+											readonly={!editable}
+											oninput={(e) => onInput(p.id, c.id, c.max_marks, e.currentTarget.value)}
+											onblur={() => onBlur(p.id, c.id, c.max_marks)}
+											onkeydown={onKeydown}
+											class="h-14 w-full max-w-28 text-center text-2xl font-bold tabular-nums read-only:bg-muted read-only:border-dashed"
+										/>
+										<span
+											class="text-muted-foreground text-lg font-semibold whitespace-nowrap"
+											aria-hidden="true">/ {formatMark(c.max_marks)}</span
+										>
+									</div>
+									{#if err}
+										<p class="text-destructive text-sm font-semibold" id="e-{k}" role="alert">
+											{errorText(err, c.max_marks)}
+										</p>
+									{/if}
+								</div>
+							{/each}
+						</Card.Content>
+						<Card.Footer>
+							{#if total.complete}
+								<Badge variant="success" class="text-sm"><CircleCheck />{t('score.complete')}</Badge
+								>
+							{:else}
+								<span class="text-muted-foreground text-sm"
+									>{t('score.incomplete', { n: total.required - total.filled })}</span
+								>
+							{/if}
+						</Card.Footer>
+					</Card.Root>
 				</li>
 			{/each}
 		</ol>
 
-		<div class="bottom-bar">
-			<div class="container row between">
-				<div>
-					<div class="small">
+		<div class="bg-background/95 sticky bottom-0 z-20 -mx-4 border-t px-4 py-3 backdrop-blur">
+			<div class="flex items-center justify-between gap-4">
+				<div class="min-w-0 flex-1">
+					<p class="text-sm font-medium">
 						{t('judge.progress', { done: completeCount, total: data.participants.length })}
-					</div>
-					<div class="progress" aria-hidden="true">
-						<span style="width: {(completeCount / Math.max(1, data.participants.length)) * 100}%"
-						></span>
-					</div>
+					</p>
+					<Progress
+						value={completeCount}
+						max={Math.max(1, data.participants.length)}
+						class="mt-1.5 h-2.5"
+					/>
 				</div>
 				{#if editable}
-					<a class="btn large" href="/judge/events/{data.event.id}/review" data-testid="review-link"
-						>{t('score.review_submit')}</a
+					<Button href="/judge/events/{data.event.id}/review" size="lg" data-testid="review-link"
+						>{t('score.review_submit')}<ArrowRight /></Button
 					>
 				{/if}
 			</div>
 		</div>
 	{/if}
 </div>
-
-<style>
-	.pre {
-		white-space: pre-wrap;
-	}
-	.crit-list {
-		list-style: none;
-		padding: 0;
-		margin: 0.5rem 0 0;
-	}
-	.crit-list li {
-		display: flex;
-		justify-content: space-between;
-		gap: 1rem;
-		padding: 0.4rem 0;
-		border-top: 1px dashed var(--border);
-	}
-	summary {
-		cursor: pointer;
-		min-height: 44px;
-		display: flex;
-		align-items: center;
-		gap: 0.25rem;
-		flex-wrap: wrap;
-	}
-	.sticky-status {
-		position: sticky;
-		top: 0;
-		z-index: 5;
-		background: var(--bg);
-		padding: 0.25rem 0;
-	}
-	.participants {
-		list-style: none;
-		padding: 0;
-		margin: 0;
-		display: grid;
-		gap: 1rem;
-	}
-	.participant {
-		border-width: 2px;
-	}
-	.participant.complete {
-		border-color: var(--success);
-	}
-	.pname {
-		font-size: 1.35rem;
-		margin: 0;
-	}
-	.total {
-		text-align: right;
-		display: flex;
-		flex-direction: column;
-	}
-	.marks {
-		display: grid;
-		gap: 0.85rem;
-		margin: 1rem 0 0.5rem;
-		grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr));
-	}
-	.mark label {
-		font-size: 1rem;
-	}
-	.input-row {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-	}
-	.input-row input {
-		font-size: 1.35rem;
-		font-weight: 700;
-		text-align: center;
-		min-height: 56px;
-		max-width: 8rem;
-	}
-	.max {
-		font-size: 1.15rem;
-		font-weight: 600;
-		color: var(--muted);
-		white-space: nowrap;
-	}
-	.field-error {
-		color: var(--danger);
-		font-weight: 600;
-		font-size: 0.95rem;
-		margin-top: 0.25rem;
-	}
-	.bottom-bar {
-		position: sticky;
-		bottom: 0;
-		background: var(--surface);
-		border-top: 2px solid var(--border);
-		margin: 1rem -1rem -1rem;
-		padding: 0.5rem 0;
-	}
-	.bottom-bar .progress {
-		width: 12rem;
-		margin-top: 0.25rem;
-	}
-	input[readonly] {
-		background: var(--neutral-bg);
-		border-style: dashed;
-	}
-</style>

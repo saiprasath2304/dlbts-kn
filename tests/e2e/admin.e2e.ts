@@ -65,6 +65,7 @@ test.describe.serial('admin workflows', () => {
 		const username = `judge99${f.groupCode}${f.eventCode}`.slice(0, 40);
 		await login(page, f.admin.username, f.admin.password);
 		await page.goto('/admin/judges');
+		await page.getByRole('button', { name: 'New judge account' }).click();
 		const create = page.locator('form[action="?/create"]');
 		await create.getByLabel('Judge name', { exact: true }).fill('New E2E Judge');
 		await create.getByLabel('Username', { exact: true }).fill(username);

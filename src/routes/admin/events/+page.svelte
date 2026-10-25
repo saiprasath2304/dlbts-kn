@@ -1,77 +1,145 @@
 <script lang="ts">
+	import Plus from '@lucide/svelte/icons/plus';
+	import FolderPlus from '@lucide/svelte/icons/folder-plus';
+	import Pencil from '@lucide/svelte/icons/pencil';
+	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import { enhance } from '$app/forms';
-	import Flash from '#lib/components/Flash.svelte';
+	import * as Tabs from '#lib/components/ui/tabs/index.js';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import * as Table from '#lib/components/ui/table/index.js';
+	import { Badge } from '#lib/components/ui/badge/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import PageHeader from '#lib/components/app/PageHeader.svelte';
+	import FormFeedback from '#lib/components/app/FormFeedback.svelte';
+	import FormDialog from '#lib/components/app/FormDialog.svelte';
+	import GroupForm from '#lib/components/app/GroupForm.svelte';
+	import EventForm from '#lib/components/app/EventForm.svelte';
 	import { t } from '#lib/i18n/t.svelte.ts';
 
 	let { data, form } = $props();
+	let tab = $state('');
+	$effect.pre(() => {
+		if (!tab || !data.groups.some((g) => g.id === tab)) tab = data.tab;
+	});
 </script>
 
 <svelte:head><title>{t('admin.events.title')}</title></svelte:head>
 
-<div class="stack">
-	<h1>{t('admin.events.title')}</h1>
-	<Flash {form} />
+<div class="grid grid-cols-1 gap-6">
+	<PageHeader title={t('admin.events.title')}>
+		{#snippet actions()}
+			<FormDialog action="?/saveGroup" title={t('admin.groups.new')} variant="outline">
+				{#snippet trigger()}<FolderPlus />{t('admin.groups.new')}{/snippet}
+				<GroupForm />
+			</FormDialog>
+			<FormDialog action="?/saveEvent" title={t('admin.events.new')} wide>
+				{#snippet trigger()}<Plus />{t('admin.events.new')}{/snippet}
+				<EventForm groups={data.groups} groupId={tab} />
+			</FormDialog>
+		{/snippet}
+	</PageHeader>
+	<FormFeedback {form} />
 
-	<details class="card" open={data.groups.every((g) => g.events.length === 0)}>
-		<summary class="btn secondary">{t('admin.events.new')}</summary>
-		<form method="POST" action="?/save" use:enhance class="stack" style="margin-top: 1rem">
-			<div class="form-grid">
-				<div>
-					<label for="n-group">{t('common.group')}</label>
-					<select id="n-group" name="group_id" required>
-						{#each data.groups as g (g.id)}<option value={g.id}>{g.name}</option>{/each}
-					</select>
-				</div>
-				<div>
-					<label for="n-code">{t('common.code')}</label>
-					<input id="n-code" name="code" required aria-describedby="n-code-help" />
-					<p class="help" id="n-code-help">{t('admin.events.code_help')}</p>
-				</div>
-				<div>
-					<label for="n-name">{t('common.name')}</label>
-					<input id="n-name" name="name" required />
-				</div>
-				<div>
-					<label for="n-prec">{t('admin.events.precision')}</label>
-					<select id="n-prec" name="score_precision">
-						<option value="0">{t('admin.events.precision_0')}</option>
-						<option value="1" selected>{t('admin.events.precision_1')}</option>
-						<option value="2">{t('admin.events.precision_2')}</option>
-					</select>
-				</div>
-				<div>
-					<label for="n-order">{t('common.order')}</label>
-					<input id="n-order" name="display_order" type="number" value="0" />
-				</div>
-			</div>
+	{#if data.groups.length}
+		<Tabs.Root bind:value={tab} class="min-w-0">
 			<div>
-				<label for="n-desc">{t('common.description')}</label>
-				<textarea id="n-desc" name="description"></textarea>
+				<Tabs.List class="h-auto flex-wrap justify-start">
+					{#each data.groups as g (g.id)}
+						<Tabs.Trigger value={g.id} class="px-4 py-2 text-[0.95rem]">
+							{g.name}<Badge variant="neutral" class="ml-1.5">{g.events.length}</Badge>
+						</Tabs.Trigger>
+					{/each}
+				</Tabs.List>
 			</div>
-			<div>
-				<label for="n-ins">{t('admin.events.instructions')}</label>
-				<textarea id="n-ins" name="instructions"></textarea>
-			</div>
-			<button class="btn" type="submit">{t('common.create')}</button>
-		</form>
-	</details>
-
-	{#each data.groups as g (g.id)}
-		<section class="stack">
-			<h2>{g.name}</h2>
-			{#if g.events.length === 0}<p class="muted">{t('common.none')}</p>{/if}
-			<ul class="grid" role="list" style="list-style: none; padding: 0">
-				{#each g.events as e (e.id)}
-					<li class="card row between">
-						<div>
-							<strong>{e.name}</strong> <span class="mono small muted">{e.code}</span>
-							{#if !e.is_active}<span class="badge neutral">{t('common.inactive')}</span>{/if}
-						</div>
-						<a class="btn small secondary" href="/admin/events/{e.id}">{t('admin.events.manage')}</a
+			{#each data.groups as g (g.id)}
+				<Tabs.Content value={g.id} class="mt-4">
+					<Card.Root class="gap-0 py-0">
+						<Card.Header
+							class="flex flex-row flex-wrap items-center justify-between gap-3 border-b py-4"
 						>
-					</li>
-				{/each}
-			</ul>
-		</section>
-	{/each}
+							<div>
+								<Card.Title class="flex items-center gap-2 text-lg">
+									{g.name}
+									<span class="text-muted-foreground font-mono text-sm font-normal">{g.code}</span>
+									{#if !g.is_active}<Badge variant="neutral">{t('common.inactive')}</Badge>{/if}
+								</Card.Title>
+								{#if g.description}<Card.Description>{g.description}</Card.Description>{/if}
+							</div>
+							<div class="flex gap-2">
+								<FormDialog action="?/saveGroup" title={g.name} variant="ghost" size="sm">
+									{#snippet trigger()}<Pencil />{t('common.edit')}{/snippet}
+									<GroupForm group={g} />
+								</FormDialog>
+								{#if g.events.length === 0}
+									<form method="POST" action="?/deleteGroup" use:enhance>
+										<input type="hidden" name="id" value={g.id} />
+										<Button type="submit" variant="destructive" size="sm"
+											>{t('common.delete')}</Button
+										>
+									</form>
+								{/if}
+							</div>
+						</Card.Header>
+						{#if g.events.length === 0}
+							<p class="text-muted-foreground p-6">{t('common.none')}</p>
+						{:else}
+							<Table.Root>
+								<Table.Header>
+									<Table.Row>
+										<Table.Head>{t('common.event')}</Table.Head>
+										<Table.Head class="hidden text-right sm:table-cell"
+											>{t('admin.events.tab_judges')}</Table.Head
+										>
+										<Table.Head class="hidden text-right sm:table-cell"
+											>{t('admin.events.tab_participants')}</Table.Head
+										>
+										<Table.Head class="hidden text-right md:table-cell"
+											>{t('admin.events.tab_criteria')}</Table.Head
+										>
+										<Table.Head></Table.Head>
+									</Table.Row>
+								</Table.Header>
+								<Table.Body>
+									{#each g.events as e (e.id)}
+										{@const st = data.stats[e.id]}
+										<Table.Row>
+											<Table.Cell class="py-3 whitespace-normal">
+												<a href="/admin/events/{e.id}" class="font-semibold hover:underline"
+													>{e.name}</a
+												>
+												<span class="text-muted-foreground ml-1 font-mono text-xs">{e.code}</span>
+												{#if !e.is_active}<Badge variant="neutral" class="ml-1"
+														>{t('common.inactive')}</Badge
+													>{/if}
+												{#if st?.finalized}<Badge variant="success" class="ml-1"
+														>{t('result_status.finalized')}</Badge
+													>{/if}
+											</Table.Cell>
+											<Table.Cell class="hidden text-right tabular-nums sm:table-cell"
+												>{st?.judges ?? 0}</Table.Cell
+											>
+											<Table.Cell class="hidden text-right tabular-nums sm:table-cell"
+												>{st?.participants ?? 0}</Table.Cell
+											>
+											<Table.Cell class="hidden text-right tabular-nums md:table-cell"
+												>{st?.criteria ?? 0}</Table.Cell
+											>
+											<Table.Cell class="w-10 text-right">
+												<Button
+													href="/admin/events/{e.id}"
+													variant="ghost"
+													size="icon-sm"
+													aria-label="{t('admin.events.manage')}: {e.name}"><ChevronRight /></Button
+												>
+											</Table.Cell>
+										</Table.Row>
+									{/each}
+								</Table.Body>
+							</Table.Root>
+						{/if}
+					</Card.Root>
+				</Tabs.Content>
+			{/each}
+		</Tabs.Root>
+	{/if}
 </div>

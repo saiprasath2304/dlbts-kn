@@ -123,8 +123,8 @@ src/
   routes/
     login, logout, lang
     judge/                    my events, scoring, review & submit, receipt
-    admin/                    dashboard, groups, events, participants (+import/export), judges,
-                              assignments, submissions, requests, results, reports, audit, settings
+    admin/                    dashboard, events (incl. groups; event tabs: criteria, judges, participants), participants (+import/export), judges,
+                              submissions, requests, results, reports, audit, settings
     api/judge/scores          autosave endpoint
 scripts/                      create-admin.ts, dlbts-kn-2026.ts (event data), generate-setup-sql.ts
 supabase/setup/               01_schema.sql + 02_dlbts_kn_2026.sql for the Supabase SQL editor
@@ -358,7 +358,7 @@ To inspect a PDF's rendering yourself (optional, needs Python with PyMuPDF):
    template). The preview shows row-level problems and an error report; nothing is saved
    until you confirm, and a file with any error imports nothing.
 4. Judges: create accounts (optionally assigning the event at the same time) and check
-   Assignments. Give each judge their username and password.
+   the event's **Judges** tab. Give each judge their username and password.
 
 **During judging**
 
@@ -455,3 +455,19 @@ Deliberate differences:
   refresh when the server is reachable; pages cannot be opened for the first time while
   fully offline (no service worker).
 - Reports render all events in one PDF; very large competitions produce long documents.
+
+## UI components
+
+The interface is built with [shadcn-svelte](https://shadcn-svelte.com) (Tailwind CSS v4 +
+bits-ui). Generated components live in `src/lib/components/ui/` and are owned by this project:
+they were adjusted for older users (44–56px buttons and inputs, success/warning/info variants)
+and to fix `data-active` rendering in the sidebar. App-level building blocks (page header,
+dialogs with forms, confirm dialogs, status badges, save indicator, native select) are in
+`src/lib/components/app/`. Theme colours (from the Balvikas logo) are the CSS variables in
+`src/app.css`. Add more components with:
+
+```bash
+npx svelte-kit sync && npx shadcn-svelte@1.7.1 add <component>
+```
+
+(`svelte-kit sync` first: the CLI reads `tsconfig.json`, which extends a file Kit generates.)

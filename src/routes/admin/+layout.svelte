@@ -1,153 +1,41 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { afterNavigate } from '$app/navigation';
+	import * as Sidebar from '#lib/components/ui/sidebar/index.js';
+	import { Separator } from '#lib/components/ui/separator/index.js';
+	import AdminSidebar from '#lib/components/app/AdminSidebar.svelte';
+	import MenuTrigger from '#lib/components/app/MenuTrigger.svelte';
 	import { t } from '#lib/i18n/t.svelte.ts';
 
-	let { children } = $props();
-	let open = $state(false);
-	afterNavigate(() => (open = false));
+	let { children, data } = $props();
 
-	type Link = [href: string, key: string];
-	const sections: [title: string, links: Link[]][] = [
-		[
-			'nav.section_overview',
-			[
-				['/admin', 'nav.dashboard'],
-				['/admin/results', 'nav.results'],
-				['/admin/reports', 'nav.reports']
-			]
-		],
-		[
-			'nav.section_judging',
-			[
-				['/admin/submissions', 'nav.submissions'],
-				['/admin/requests', 'nav.requests']
-			]
-		],
-		[
-			'nav.section_setup',
-			[
-				['/admin/events', 'nav.events'],
-				['/admin/groups', 'nav.groups'],
-				['/admin/participants', 'nav.participants'],
-				['/admin/judges', 'nav.judges'],
-				['/admin/assignments', 'nav.assignments']
-			]
-		],
-		[
-			'nav.section_system',
-			[
-				['/admin/audit', 'nav.audit'],
-				['/admin/settings', 'nav.settings']
-			]
-		]
+	const titles: [string, string][] = [
+		['/admin/results', 'nav.results'],
+		['/admin/reports', 'nav.reports'],
+		['/admin/submissions', 'nav.submissions'],
+		['/admin/requests', 'nav.requests'],
+		['/admin/events', 'nav.events'],
+		['/admin/participants', 'nav.participants'],
+		['/admin/judges', 'nav.judges'],
+		['/admin/audit', 'nav.audit'],
+		['/admin/settings', 'nav.settings']
 	];
-
-	const path = $derived(page.url.pathname);
-	const isCurrent = (href: string) =>
-		href === '/admin' ? path === '/admin' : path.startsWith(href);
-	const currentLabel = $derived(
-		sections.flatMap(([, items]) => items).find(([href]) => isCurrent(href))?.[1] ?? 'nav.dashboard'
+	const section = $derived(
+		titles.find(([p]) => page.url.pathname.startsWith(p))?.[1] ?? 'nav.dashboard'
 	);
 </script>
 
-<div class="shell">
-	<aside class="side">
-		<button
-			class="btn secondary block menu-toggle"
-			type="button"
-			aria-expanded={open}
-			aria-controls="admin-nav"
-			onclick={() => (open = !open)}
+<Sidebar.Provider>
+	<AdminSidebar pendingRequests={data.pendingRequests} />
+	<Sidebar.Inset class="bg-background">
+		<header
+			class="bg-background/90 sticky top-0 z-20 flex h-14 items-center gap-3 border-b px-4 backdrop-blur"
 		>
-			☰ {t('nav.menu')}: {t(currentLabel)}
-		</button>
-		<nav id="admin-nav" aria-label="Admin" class:open>
-			{#each sections as [title, items] (title)}
-				<div class="section">
-					<div class="section-title">{t(title)}</div>
-					<ul>
-						{#each items as [href, key] (href)}
-							<li><a {href} aria-current={isCurrent(href) ? 'page' : undefined}>{t(key)}</a></li>
-						{/each}
-					</ul>
-				</div>
-			{/each}
-		</nav>
-	</aside>
-	<div class="content">
-		{@render children()}
-	</div>
-</div>
-
-<style>
-	.shell {
-		max-width: var(--maxw);
-		margin: 0 auto;
-		padding: 1.25rem 1rem 2rem;
-		display: grid;
-		gap: 1.5rem;
-		grid-template-columns: 1fr;
-	}
-	.content {
-		min-width: 0;
-	}
-	nav {
-		display: none;
-		background: var(--surface);
-		border: 1px solid var(--border);
-		border-radius: var(--radius);
-		padding: 0.6rem;
-		margin-top: 0.5rem;
-		box-shadow: var(--shadow);
-	}
-	nav.open {
-		display: block;
-	}
-	.section + .section {
-		margin-top: 0.5rem;
-	}
-	.section-title {
-		font-size: 0.78rem;
-		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 0.06em;
-		color: var(--muted);
-		padding: 0.4rem 0.75rem 0.2rem;
-	}
-	ul {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-	}
-	a {
-		display: block;
-		padding: 0.55rem 0.75rem;
-		border-radius: 10px;
-		text-decoration: none;
-		font-weight: 600;
-		color: var(--text);
-		min-height: 44px;
-	}
-	a:hover {
-		background: var(--surface-soft);
-	}
-	a[aria-current='page'] {
-		background: var(--primary-soft);
-		color: var(--primary-hover);
-	}
-	@media (min-width: 960px) {
-		.shell {
-			grid-template-columns: 230px 1fr;
-		}
-		.menu-toggle {
-			display: none;
-		}
-		nav {
-			display: block;
-			position: sticky;
-			top: 5rem;
-			margin-top: 0;
-		}
-	}
-</style>
+			<MenuTrigger />
+			<Separator orientation="vertical" class="h-6" />
+			<span class="text-muted-foreground font-medium">{t(section)}</span>
+		</header>
+		<main id="main" tabindex="-1" class="mx-auto w-full max-w-6xl min-w-0 p-4 outline-none md:p-6">
+			{@render children()}
+		</main>
+	</Sidebar.Inset>
+</Sidebar.Provider>

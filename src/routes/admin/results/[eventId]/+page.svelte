@@ -1,8 +1,24 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import Flash from '#lib/components/Flash.svelte';
-	import ConfirmForm from '#lib/components/ConfirmForm.svelte';
-	import StatusBadge from '#lib/components/StatusBadge.svelte';
+	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
+	import Trophy from '@lucide/svelte/icons/trophy';
+	import Medal from '@lucide/svelte/icons/medal';
+	import Lock from '@lucide/svelte/icons/lock';
+	import EyeOff from '@lucide/svelte/icons/eye-off';
+	import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
+	import CircleCheck from '@lucide/svelte/icons/circle-check';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import * as Alert from '#lib/components/ui/alert/index.js';
+	import * as Table from '#lib/components/ui/table/index.js';
+	import { Badge } from '#lib/components/ui/badge/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import { Label } from '#lib/components/ui/label/index.js';
+	import { Textarea } from '#lib/components/ui/textarea/index.js';
+	import PageHeader from '#lib/components/app/PageHeader.svelte';
+	import FormFeedback from '#lib/components/app/FormFeedback.svelte';
+	import ConfirmForm from '#lib/components/app/ConfirmForm.svelte';
+	import StatusBadge from '#lib/components/app/StatusBadge.svelte';
 	import { t, locale } from '#lib/i18n/t.svelte.ts';
 	import { formatDateTime } from '#lib/i18n/index.ts';
 	import { formatMark, ordinal, podium } from '#lib/scoring.ts';
@@ -12,7 +28,7 @@
 	const r = $derived(data.results);
 	const byId = $derived(new Map((r.participants ?? []).map((p) => [p.participant_id, p])));
 	const winners = $derived(podium(r.participants ?? []));
-	const tone = $derived(
+	const variant = $derived(
 		r.status === 'finalized'
 			? 'success'
 			: r.status === 'ready_for_finalization'
@@ -21,177 +37,29 @@
 					? 'warning'
 					: 'neutral'
 	);
+	const medal = ['text-amber-500', 'text-slate-400', 'text-orange-700'];
 </script>
 
 <svelte:head><title>{data.event.name} – {t('admin.results.title')}</title></svelte:head>
 
-<div class="stack">
-	<a href="/admin/results">← {t('admin.results.title')}</a>
-	<div class="row between">
-		<div>
-			<div class="muted">{data.event.groups?.name}</div>
-			<h1 style="margin: 0">{data.event.name}</h1>
-		</div>
-		<span class="badge {tone}" data-testid="result-status">{t(`result_status.${r.status}`)}</span>
+<div class="grid grid-cols-1 gap-6">
+	<div>
+		<Button href="/admin/results" variant="ghost" size="sm" class="-ml-2"
+			><ArrowLeft />{t('admin.results.title')}</Button
+		>
 	</div>
-	<Flash {form} />
-
-	<section class="card stack">
-		<h2>
-			{t('report.judges_submitted')}: {t('common.of', {
-				a: r.submitted_judges,
-				b: r.required_judges
-			})}
-		</h2>
-		<ul>
-			{#each r.judges as j (j.judge_id)}
-				<li>
-					{j.display_name} <span class="mono small">{j.username}</span>
-					{#if j.status}<StatusBadge status={j.status as SubmissionStatus} />{/if}
-					{#if j.missing}<span class="badge danger"
-							>{t('admin.submissions.missing', { n: j.missing })}</span
-						>{/if}
-				</li>
-			{/each}
-		</ul>
-	</section>
-
-	{#if !r.complete || !r.participants}
-		<div class="alert info" data-testid="results-hidden">{t('admin.results.hidden')}</div>
-	{:else}
-		{#if r.status !== 'finalized'}
-			<div class="alert warning">{t('admin.results.provisional')}</div>
-		{:else if r.finalization}
-			<div class="alert success">
-				{t('admin.results.finalized_at', {
-					time: formatDateTime(locale(), r.finalization.finalized_at)
-				})}
-			</div>
-		{/if}
-
-		{#if winners.length}
-			<section class="card stack">
-				<h2>{t('admin.results.winners')}</h2>
-				<ol class="podium">
-					{#each winners as w (w.participant_id)}
-						<li>
-							<span class="badge success">{ordinal(w.final_rank!, locale())}</span>
-							<strong>{w.name}</strong>
-							({w.code}) – {formatMark(w.aggregate)}
-						</li>
-					{/each}
-				</ol>
-			</section>
-		{/if}
-
-		<div class="table-wrap">
-			<table data-testid="results-table">
-				<thead>
-					<tr>
-						<th>{t('admin.results.rank')}</th>
-						<th>{t('common.participant')}</th>
-						{#each r.judges as j (j.judge_id)}<th class="num">{j.display_name}</th>{/each}
-						<th class="num">{t('admin.results.aggregate')}</th>
-					</tr>
-				</thead>
-				<tbody>
-					{#each r.participants as p (p.participant_id)}
-						<tr>
-							<td>
-								{#if p.final_rank}<strong>{p.final_rank}</strong>{:else}–{/if}
-								{#if p.tied}<span class="badge warning">{t('admin.results.tied')}</span>{/if}
-							</td>
-							<td
-								><strong>{p.name}</strong><br /><span class="mono small">{p.code}</span
-								>{#if p.affiliation}
-									· <span class="small">{p.affiliation}</span>{/if}</td
-							>
-							{#each r.judges as j (j.judge_id)}<td class="num"
-									>{formatMark(Number(p.judge_totals[j.judge_id] ?? 0))}</td
-								>{/each}
-							<td class="num big">{formatMark(p.aggregate)}</td>
-						</tr>
-					{/each}
-				</tbody>
-			</table>
-		</div>
-
-		{#if r.ties.length}
-			<section class="stack">
-				<h2>{t('admin.results.ties')}</h2>
-				{#each r.ties as tie (tie.participant_ids.join())}
-					<form
-						method="POST"
-						action="?/resolveTie"
-						use:enhance
-						class="card stack"
-						data-testid="tie-form"
-					>
-						<h3>
-							{t('admin.results.tie_group', {
-								aggregate: formatMark(tie.aggregate),
-								from: tie.start_rank,
-								to: tie.start_rank + tie.participant_ids.length - 1
-							})}
-							{#if tie.resolved}<span class="badge success">✓</span>{/if}
-						</h3>
-						{#if tie.resolved && tie.reason}<p class="small">
-								{t('admin.results.tie_resolved', { reason: tie.reason })}
-							</p>{/if}
-						{#if r.status !== 'finalized'}
-							<div class="form-grid">
-								{#each tie.participant_ids as pid (pid)}
-									<div>
-										<input type="hidden" name="pid" value={pid} />
-										<label for="rank-{pid}">{byId.get(pid)?.name} ({byId.get(pid)?.code})</label>
-										<input
-											id="rank-{pid}"
-											name="rank_{pid}"
-											type="number"
-											min={tie.start_rank}
-											max={tie.start_rank + tie.participant_ids.length - 1}
-											required
-											value={tie.ranks?.[pid] ?? ''}
-										/>
-									</div>
-								{/each}
-							</div>
-							{#if data.corrections.length}
-								<fieldset>
-									<legend>{t('admin.requests.corrections')} ({t('common.optional')})</legend>
-									{#each data.corrections as c (c.id)}
-										<label class="checkbox"
-											><input type="checkbox" name="correction_ids" value={c.id} />
-											{c.message} ({t(`request.${c.status}`)})</label
-										>
-									{/each}
-								</fieldset>
-							{/if}
-							<div>
-								<label for="tie-reason-{tie.start_rank}">{t('common.reason')}</label>
-								<textarea id="tie-reason-{tie.start_rank}" name="reason" required minlength="3"
-								></textarea>
-							</div>
-							<div class="row">
-								<button class="btn" type="submit">{t('admin.results.resolve_tie')}</button>
-								<a class="btn ghost" href="/admin/submissions?event={r.event_id}"
-									>{t('admin.results.request_review')}</a
-								>
-							</div>
-						{/if}
-					</form>
-				{/each}
-			</section>
-		{/if}
-
-		<div class="row">
+	<PageHeader title={data.event.name} eyebrow={data.event.groups?.name}>
+		{#snippet actions()}
+			<Badge {variant} class="text-sm" data-testid="result-status"
+				>{t(`result_status.${r.status}`)}</Badge
+			>
 			{#if r.status === 'ready_for_finalization'}
 				<ConfirmForm
 					action="?/finalize"
 					label={t('admin.results.finalize')}
 					title={t('admin.results.finalize')}
 					message={t('admin.results.finalize_confirm', { event: data.event.name })}
-					buttonClass="btn large"
+					variant="default"
 				/>
 			{:else if r.status === 'finalized'}
 				<ConfirmForm
@@ -200,20 +68,196 @@
 					title={t('admin.results.unfinalize')}
 					requireReason
 					danger
-					buttonClass="btn ghost"
+					variant="ghost"
 				/>
 			{/if}
-		</div>
+		{/snippet}
+	</PageHeader>
+	<FormFeedback {form} />
+
+	<Card.Root>
+		<Card.Header
+			><Card.Title
+				>{t('report.judges_submitted')}: {t('common.of', {
+					a: r.submitted_judges,
+					b: r.required_judges
+				})}</Card.Title
+			></Card.Header
+		>
+		<Card.Content class="flex flex-wrap gap-3">
+			{#each r.judges as j (j.judge_id)}
+				<div class="flex items-center gap-2 rounded-lg border px-3 py-2">
+					<span class="font-medium">{j.display_name}</span>
+					{#if j.status}<StatusBadge status={j.status as SubmissionStatus} />{/if}
+					{#if j.missing}<Badge variant="destructive"
+							>{t('admin.submissions.missing', { n: j.missing })}</Badge
+						>{/if}
+				</div>
+			{/each}
+		</Card.Content>
+	</Card.Root>
+
+	{#if !r.complete || !r.participants}
+		<Alert.Root variant="info" data-testid="results-hidden"
+			><EyeOff /><Alert.Title>{t('admin.results.hidden')}</Alert.Title></Alert.Root
+		>
+	{:else}
+		{#if r.status !== 'finalized'}
+			<Alert.Root variant="warning"
+				><TriangleAlert /><Alert.Title>{t('admin.results.provisional')}</Alert.Title></Alert.Root
+			>
+		{:else if r.finalization}
+			<Alert.Root variant="success"
+				><Lock /><Alert.Title
+					>{t('admin.results.finalized_at', {
+						time: formatDateTime(locale(), r.finalization.finalized_at)
+					})}</Alert.Title
+				></Alert.Root
+			>
+		{/if}
+
+		{#if winners.length}
+			<div class="grid gap-3 sm:grid-cols-3">
+				{#each winners as w (w.participant_id)}
+					<Card.Root class="gap-2 py-4">
+						<Card.Content class="flex items-center gap-3 px-4">
+							<Medal
+								class="size-9 shrink-0 {medal[(w.final_rank ?? 1) - 1] ?? 'text-muted-foreground'}"
+							/>
+							<div class="min-w-0">
+								<div class="text-muted-foreground text-sm font-medium">
+									{ordinal(w.final_rank!, locale())}
+								</div>
+								<div class="truncate font-bold">{w.name}</div>
+								<div class="text-muted-foreground text-sm">
+									{w.code} · {formatMark(w.aggregate)}
+								</div>
+							</div>
+						</Card.Content>
+					</Card.Root>
+				{/each}
+			</div>
+		{/if}
+
+		<Card.Root class="py-0">
+			<Table.Root data-testid="results-table">
+				<Table.Header>
+					<Table.Row>
+						<Table.Head class="w-16">{t('admin.results.rank')}</Table.Head>
+						<Table.Head>{t('common.participant')}</Table.Head>
+						{#each r.judges as j (j.judge_id)}<Table.Head class="text-right whitespace-normal"
+								>{j.display_name}</Table.Head
+							>{/each}
+						<Table.Head class="text-right">{t('admin.results.aggregate')}</Table.Head>
+					</Table.Row>
+				</Table.Header>
+				<Table.Body>
+					{#each r.participants as p (p.participant_id)}
+						<Table.Row>
+							<Table.Cell>
+								<span class="text-lg font-bold">{p.final_rank ?? '–'}</span>
+								{#if p.tied}<Badge variant="warning" class="ml-1">{t('admin.results.tied')}</Badge
+									>{/if}
+							</Table.Cell>
+							<Table.Cell class="whitespace-normal">
+								<div class="font-semibold">{p.name}</div>
+								<div class="text-muted-foreground text-sm">
+									<span class="font-mono">{p.code}</span>{#if p.affiliation}
+										· {p.affiliation}{/if}
+								</div>
+							</Table.Cell>
+							{#each r.judges as j (j.judge_id)}<Table.Cell class="text-right tabular-nums"
+									>{formatMark(Number(p.judge_totals[j.judge_id] ?? 0))}</Table.Cell
+								>{/each}
+							<Table.Cell class="text-right text-lg font-bold tabular-nums"
+								>{formatMark(p.aggregate)}</Table.Cell
+							>
+						</Table.Row>
+					{/each}
+				</Table.Body>
+			</Table.Root>
+		</Card.Root>
+
+		{#if r.ties.length}
+			<div class="grid gap-4">
+				<h2 class="flex items-center gap-2 text-xl font-semibold">
+					<Trophy class="text-primary" />{t('admin.results.ties')}
+				</h2>
+				{#each r.ties as tie (tie.participant_ids.join())}
+					<Card.Root data-testid="tie-form">
+						<Card.Header>
+							<Card.Title class="flex items-center gap-2">
+								{t('admin.results.tie_group', {
+									aggregate: formatMark(tie.aggregate),
+									from: tie.start_rank,
+									to: tie.start_rank + tie.participant_ids.length - 1
+								})}
+								{#if tie.resolved}<Badge variant="success"><CircleCheck />✓</Badge>{/if}
+							</Card.Title>
+							{#if tie.resolved && tie.reason}<Card.Description
+									>{t('admin.results.tie_resolved', { reason: tie.reason })}</Card.Description
+								>{/if}
+						</Card.Header>
+						{#if r.status !== 'finalized'}
+							<Card.Content>
+								<form method="POST" action="?/resolveTie" use:enhance class="grid gap-4">
+									<div class="grid gap-3 sm:grid-cols-2">
+										{#each tie.participant_ids as pid (pid)}
+											<div class="grid gap-2">
+												<input type="hidden" name="pid" value={pid} />
+												<Label for="rank-{pid}">{byId.get(pid)?.name} ({byId.get(pid)?.code})</Label
+												>
+												<Input
+													id="rank-{pid}"
+													name="rank_{pid}"
+													type="number"
+													min={tie.start_rank}
+													max={tie.start_rank + tie.participant_ids.length - 1}
+													required
+													value={tie.ranks?.[pid] ?? ''}
+													class="max-w-28"
+												/>
+											</div>
+										{/each}
+									</div>
+									{#if data.corrections.length}
+										<fieldset class="grid gap-2">
+											<legend class="mb-1 text-sm font-medium"
+												>{t('admin.requests.corrections')} ({t('common.optional')})</legend
+											>
+											{#each data.corrections as c (c.id)}
+												<label class="flex items-center gap-2 text-sm"
+													><input
+														type="checkbox"
+														name="correction_ids"
+														value={c.id}
+														class="accent-primary size-5"
+													/>{c.message} ({t(`request.${c.status}`)})</label
+												>
+											{/each}
+										</fieldset>
+									{/if}
+									<div class="grid gap-2">
+										<Label for="tie-reason-{tie.start_rank}">{t('common.reason')}</Label>
+										<Textarea
+											id="tie-reason-{tie.start_rank}"
+											name="reason"
+											required
+											minlength={3}
+										/>
+									</div>
+									<div class="flex flex-wrap gap-2">
+										<Button type="submit">{t('admin.results.resolve_tie')}</Button>
+										<Button href="/admin/submissions?event={r.event_id}" variant="ghost"
+											>{t('admin.results.request_review')}</Button
+										>
+									</div>
+								</form>
+							</Card.Content>
+						{/if}
+					</Card.Root>
+				{/each}
+			</div>
+		{/if}
 	{/if}
 </div>
-
-<style>
-	.podium {
-		list-style: none;
-		padding: 0;
-		margin: 0;
-		display: grid;
-		gap: 0.5rem;
-		font-size: 1.1rem;
-	}
-</style>

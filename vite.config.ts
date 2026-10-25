@@ -3,6 +3,7 @@ import { loadEnv } from 'vite';
 import adapterNode from '@sveltejs/adapter-node';
 import adapterVercel from '@sveltejs/adapter-vercel';
 import { sveltekit } from '@sveltejs/kit/vite';
+import tailwindcss from '@tailwindcss/vite';
 
 // Vercel sets VERCEL=1 during its builds; everywhere else we build a Node server.
 const adapter = process.env.VERCEL ? adapterVercel({ runtime: 'nodejs22.x' }) : adapterNode();
@@ -14,6 +15,7 @@ export default defineConfig(({ mode }) => {
 	const origin = loadEnv(mode, process.cwd(), '').ORIGIN || undefined;
 	return {
 		plugins: [
+			tailwindcss(),
 			sveltekit({
 				compilerOptions: {
 					// Force runes mode for the project, except for libraries. Can be removed in svelte 6.

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import '../app.css';
 	import { page } from '$app/state';
-	import Header from '#lib/components/Header.svelte';
+	import TopBar from '#lib/components/app/TopBar.svelte';
 	import { t } from '#lib/i18n/t.svelte.ts';
 
 	let { children, data } = $props();
@@ -20,8 +20,20 @@
 	<link rel="icon" href="/logo.png" />
 </svelte:head>
 
-<a class="skip-link" href="#main">{t('nav.skip')}</a>
-<Header />
-<main id="main" class={isAdmin ? 'admin-main' : 'container narrow'} tabindex="-1">
+<a
+	class="bg-background sr-only z-50 rounded-md px-4 py-3 focus:not-sr-only focus:fixed focus:top-2 focus:left-2"
+	href="#main">{t('nav.skip')}</a
+>
+
+{#if isAdmin}
 	{@render children()}
-</main>
+{:else}
+	<div
+		class="min-h-svh bg-[radial-gradient(1200px_420px_at_50%_-220px,var(--color-secondary),transparent_70%)]"
+	>
+		<TopBar />
+		<main id="main" tabindex="-1" class="mx-auto max-w-4xl px-4 py-6 outline-none">
+			{@render children()}
+		</main>
+	</div>
+{/if}
