@@ -14,7 +14,9 @@ export async function loadJudgeEvent(locals: App.Locals, eventId: string) {
 	const [eventRes, criteriaRes, entriesRes, submissionRes] = await Promise.all([
 		db
 			.from('events')
-			.select('id, code, name, description, instructions, score_precision, groups(id, code, name)')
+			.select(
+				'id, code, name, description, instructions, score_precision, venue, groups(id, code, name)'
+			)
 			.eq('id', eventId)
 			.maybeSingle(),
 		db
@@ -26,7 +28,7 @@ export async function loadJudgeEvent(locals: App.Locals, eventId: string) {
 			.order('name'),
 		db
 			.from('event_participants')
-			.select('display_order, participants(id, code, name, kind, affiliation)')
+			.select('display_order, participants(id, code, name, kind, affiliation, members)')
 			.eq('event_id', eventId)
 			.eq('is_active', true),
 		db
@@ -39,24 +41,38 @@ export async function loadJudgeEvent(locals: App.Locals, eventId: string) {
 	if (!eventRes.data || !submissionRes.data) error(404, { message: 'Not found' });
 
 	const submission = submissionRes.data as typeof submissionRes.data & { status: SubmissionStatus };
-	const [scoresRes, correctionsRes, reopeningsRes] = await Promise.all([
-		db
-			.from('criterion_scores')
-			.select('participant_id, criterion_id, value, version, updated_at')
-			.eq('submission_id', submission.id),
-		db
-			.from('correction_requests')
-			.select(
-				'id, participant_id, criterion_ids, message, status, judge_response, created_at, unlocks_submission'
-			)
-			.eq('submission_id', submission.id)
-			.order('created_at', { ascending: false }),
-		db
-			.from('reopening_requests')
-			.select('id, reason, status, resolution_note, created_at, resolved_at')
-			.eq('submission_id', submission.id)
-			.order('created_at', { ascending: false })
-	]);
+	const [scoresRes, correctionsRes, reopeningsRes, remarksRes, contextRes, preqRes] =
+		await Promise.all([
+			db
+				.from('criterion_scores')
+				.select('participant_id, criterion_id, value, version, updated_at')
+				.eq('submission_id', submission.id),
+			db
+				.from('correction_requests')
+				.select(
+					'id, participant_id, criterion_ids, message, status, judge_response, created_at, unlocks_submission'
+				)
+				.eq('submission_id', submission.id)
+				.order('created_at', { ascending: false }),
+			db
+				.from('reopening_requests')
+				.select('id, reason, status, resolution_note, created_at, resolved_at')
+				.eq('submission_id', submission.id)
+				.order('created_at', { ascending: false }),
+			db
+				.from('participant_remarks')
+				.select('participant_id, remark, updated_at')
+				.eq('submission_id', submission.id),
+			db.rpc('event_participant_context', { p_event_id: eventId }),
+			db
+				.from('participant_requests')
+				.select(
+					'id, request_type, participant_id, name, details, status, resolution_note, created_at'
+				)
+				.eq('event_id', eventId)
+				.eq('requested_by', judgeId)
+				.order('created_at', { ascending: false })
+		]);
 
 	const participants = (entriesRes.data ?? [])
 		.filter((e) => e.participants)
@@ -76,8 +92,31 @@ export async function loadJudgeEvent(locals: App.Locals, eventId: string) {
 			value: s.value === null ? null : Number(s.value)
 		})),
 		corrections: correctionsRes.data ?? [],
-		reopenings: reopeningsRes.data ?? []
+		reopenings: reopeningsRes.data ?? [],
+		remarks: Object.fromEntries(
+			(remarksRes.data ?? []).map((r) => [r.participant_id, r.remark])
+		) as Record<string, string>,
+		context: Object.fromEntries(
+			(contextRes.data ?? []).map((c) => [
+				c.participant_id,
+				{
+					other_events: (c.other_events ?? []) as {
+						event_id: string;
+						name: string;
+						group: string;
+						venue: string | null;
+					}[],
+					memento: { given: c.memento_given, at: c.memento_given_at, by: c.memento_given_by_name }
+				}
+			])
+		) as Record<string, ParticipantContext>,
+		participantRequests: preqRes.data ?? []
 	};
+}
+
+export interface ParticipantContext {
+	other_events: { event_id: string; name: string; group: string; venue: string | null }[];
+	memento: { given: boolean; at: string | null; by: string | null };
 }
 
 export type JudgeEventData = Awaited<ReturnType<typeof loadJudgeEvent>>;

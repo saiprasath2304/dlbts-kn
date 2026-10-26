@@ -112,7 +112,10 @@
 							<a href="/admin/events/{r.event_id}" class="font-medium hover:underline"
 								>{r.event_name}</a
 							>
-							<div class="text-muted-foreground text-xs">{r.group_name}</div>
+							<div class="text-muted-foreground text-xs">
+								{r.group_name}{#if r.venue}
+									· {r.venue}{/if}
+							</div>
 						</Table.Cell>
 						<Table.Cell class="hidden sm:table-cell">
 							<div class="flex items-center gap-3">

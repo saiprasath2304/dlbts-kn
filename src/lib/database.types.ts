@@ -378,6 +378,7 @@ export type Database = {
 					name: string;
 					score_precision: number;
 					updated_at: string;
+					venue: string | null;
 				};
 				ComputedFields: never;
 				Insert: {
@@ -392,6 +393,7 @@ export type Database = {
 					name: string;
 					score_precision?: number;
 					updated_at?: string;
+					venue?: string | null;
 				};
 				Update: {
 					code?: string;
@@ -405,6 +407,7 @@ export type Database = {
 					name?: string;
 					score_precision?: number;
 					updated_at?: string;
+					venue?: string | null;
 				};
 				Relationships: [
 					{
@@ -503,6 +506,126 @@ export type Database = {
 					}
 				];
 			};
+			participant_remarks: {
+				Row: {
+					created_at: string;
+					id: string;
+					participant_id: string;
+					remark: string;
+					submission_id: string;
+					updated_at: string;
+					updated_by: string | null;
+				};
+				ComputedFields: never;
+				Insert: {
+					created_at?: string;
+					id?: string;
+					participant_id: string;
+					remark?: string;
+					submission_id: string;
+					updated_at?: string;
+					updated_by?: string | null;
+				};
+				Update: {
+					created_at?: string;
+					id?: string;
+					participant_id?: string;
+					remark?: string;
+					submission_id?: string;
+					updated_at?: string;
+					updated_by?: string | null;
+				};
+				Relationships: [
+					{
+						foreignKeyName: 'participant_remarks_submission_id_fkey';
+						columns: ['submission_id'];
+						isOneToOne: false;
+						referencedRelation: 'submissions';
+						referencedColumns: ['id'];
+					},
+					{
+						foreignKeyName: 'participant_remarks_participant_id_fkey';
+						columns: ['participant_id'];
+						isOneToOne: false;
+						referencedRelation: 'participants';
+						referencedColumns: ['id'];
+					}
+				];
+			};
+			participant_requests: {
+				Row: {
+					created_at: string;
+					created_participant_id: string | null;
+					details: string;
+					event_id: string;
+					id: string;
+					name: string | null;
+					participant_id: string | null;
+					request_type: string;
+					requested_by: string;
+					resolution_note: string | null;
+					resolved_at: string | null;
+					resolved_by: string | null;
+					status: Database['public']['Enums']['request_status'];
+					updated_at: string;
+				};
+				ComputedFields: never;
+				Insert: {
+					created_at?: string;
+					created_participant_id?: string | null;
+					details: string;
+					event_id: string;
+					id?: string;
+					name?: string | null;
+					participant_id?: string | null;
+					request_type: string;
+					requested_by: string;
+					resolution_note?: string | null;
+					resolved_at?: string | null;
+					resolved_by?: string | null;
+					status?: Database['public']['Enums']['request_status'];
+					updated_at?: string;
+				};
+				Update: {
+					created_at?: string;
+					created_participant_id?: string | null;
+					details?: string;
+					event_id?: string;
+					id?: string;
+					name?: string | null;
+					participant_id?: string | null;
+					request_type?: string;
+					requested_by?: string;
+					resolution_note?: string | null;
+					resolved_at?: string | null;
+					resolved_by?: string | null;
+					status?: Database['public']['Enums']['request_status'];
+					updated_at?: string;
+				};
+				Relationships: [
+					{
+						foreignKeyName: 'participant_requests_event_id_fkey';
+						columns: ['event_id'];
+						isOneToOne: false;
+						referencedRelation: 'events';
+						referencedColumns: ['id'];
+					},
+					{
+						foreignKeyName: 'participant_requests_participant_id_fkey';
+						columns: ['participant_id'];
+						isOneToOne: false;
+						referencedRelation: 'participants';
+						referencedColumns: ['id'];
+					},
+					{
+						foreignKeyName: 'participant_requests_requested_by_fkey';
+						columns: ['requested_by'];
+						isOneToOne: false;
+						referencedRelation: 'profiles';
+						referencedColumns: ['id'];
+					}
+				];
+			};
 			participants: {
 				Row: {
 					affiliation: string | null;
@@ -516,6 +639,10 @@ export type Database = {
 					notes: string | null;
 					registration_no: string | null;
 					updated_at: string;
+					members: string | null;
+					memento_given: boolean;
+					memento_given_at: string | null;
+					memento_given_by: string | null;
 				};
 				ComputedFields: never;
 				Insert: {
@@ -530,6 +657,10 @@ export type Database = {
 					notes?: string | null;
 					registration_no?: string | null;
 					updated_at?: string;
+					members?: string | null;
+					memento_given?: boolean;
+					memento_given_at?: string | null;
+					memento_given_by?: string | null;
 				};
 				Update: {
 					affiliation?: string | null;
@@ -543,6 +674,10 @@ export type Database = {
 					notes?: string | null;
 					registration_no?: string | null;
 					updated_at?: string;
+					members?: string | null;
+					memento_given?: boolean;
+					memento_given_at?: string | null;
+					memento_given_by?: string | null;
 				};
 				Relationships: [
 					{
@@ -1101,6 +1236,7 @@ export type Database = {
 					p_name: string;
 					p_reason?: string;
 					p_score_precision: number;
+					p_venue?: string;
 				};
 				Returns: string;
 			};
@@ -1155,6 +1291,45 @@ export type Database = {
 			};
 			current_reason: { Args: Record<PropertyKey, never>; Returns: string };
 			event_has_scores: { Args: { p_event_id: string }; Returns: boolean };
+			event_participant_context: {
+				Args: { p_event_id: string };
+				Returns: {
+					participant_id: string;
+					other_events: Json;
+					memento_given: boolean;
+					memento_given_at: string | null;
+					memento_given_by_name: string | null;
+				}[];
+			};
+			event_tie_alerts: { Args: { p_event_id: string }; Returns: Json };
+			request_participant_change: {
+				Args: {
+					p_details: string;
+					p_event_id: string;
+					p_name: string;
+					p_participant_id: string;
+					p_type: string;
+				};
+				Returns: string;
+			};
+			resolve_participant_request: {
+				Args: {
+					p_affiliation?: string;
+					p_approve: boolean;
+					p_code?: string;
+					p_kind?: string;
+					p_members?: string;
+					p_name?: string;
+					p_note: string;
+					p_request_id: string;
+				};
+				Returns: string;
+			};
+			save_remark: {
+				Args: { p_participant_id: string; p_remark: string; p_submission_id: string };
+				Returns: Json;
+			};
+			set_memento: { Args: { p_given: boolean; p_participant_id: string }; Returns: Json };
 			event_results_internal: { Args: { p_event_id: string }; Returns: Json };
 			finalize_event_results: { Args: { p_event_id: string }; Returns: string };
 			get_event_results: { Args: { p_event_id: string }; Returns: Json };

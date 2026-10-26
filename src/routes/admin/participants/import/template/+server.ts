@@ -3,8 +3,28 @@ import { toXlsx } from '#lib/server/spreadsheet.ts';
 import type { RequestHandler } from './$types';
 
 const EXAMPLE = [
-	['G1-SC-001', 'Example Participant', 'grp1', 'sc', 'individual', 'Example Unit', '', ''],
-	['T-001', 'Example Team', 'team', 'qu', 'team', 'Example Unit', '', '']
+	[
+		'G1-SLOKA-001',
+		'Example Participant',
+		'grp1',
+		'sloka',
+		'individual',
+		'Example Unit',
+		'',
+		'',
+		''
+	],
+	[
+		'T-QUIZ-01',
+		'Example Team',
+		'team',
+		'quiz',
+		'team',
+		'Example Unit',
+		'',
+		'',
+		'Member One, Member Two'
+	]
 ];
 
 export const GET: RequestHandler = async ({ url }) => {

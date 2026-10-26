@@ -3,6 +3,10 @@
 	import Upload from '@lucide/svelte/icons/upload';
 	import Download from '@lucide/svelte/icons/download';
 	import Pencil from '@lucide/svelte/icons/pencil';
+	import Gift from '@lucide/svelte/icons/gift';
+	import MessageSquareText from '@lucide/svelte/icons/message-square-text';
+	import { enhance } from '$app/forms';
+	import { withProgress } from '#lib/progress.svelte.ts';
 	import Search from '@lucide/svelte/icons/search';
 	import * as Card from '#lib/components/ui/card/index.js';
 	import * as Table from '#lib/components/ui/table/index.js';
@@ -135,6 +139,24 @@
 										: t('admin.participants.kind_individual')}
 									{#if p.affiliation}· {p.affiliation}{/if}
 								</div>
+								{#if p.members}<div class="text-muted-foreground mt-0.5 text-xs">
+										{t('score.members')}: {p.members}
+									</div>{/if}
+								<form method="POST" action="?/memento" use:enhance={withProgress()} class="mt-1.5">
+									<input type="hidden" name="id" value={p.id} />
+									<input type="hidden" name="given" value={p.memento_given ? 'false' : 'true'} />
+									<button
+										type="submit"
+										class="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs {p.memento_given
+											? 'border-success/40 bg-success/10 text-success'
+											: 'text-muted-foreground hover:bg-muted'}"
+										aria-pressed={p.memento_given}
+									>
+										<Gift class="size-3" />{p.memento_given
+											? t('memento.given')
+											: t('memento.mark_given')}
+									</button>
+								</form>
 								{#if !p.is_active}<Badge variant="neutral" class="mt-1"
 										>{t('common.inactive')}</Badge
 									>{/if}
@@ -150,6 +172,16 @@
 							</Table.Cell>
 							<Table.Cell class="text-right">
 								<div class="flex justify-end gap-1">
+									<Button
+										href="/admin/feedback/pdf?participant={p.id}"
+										variant="ghost"
+										size="sm"
+										download
+										title={t('admin.participants.feedback_pdf')}
+										><MessageSquareText /><span class="sr-only xl:not-sr-only"
+											>{t('admin.participants.feedback_pdf')}</span
+										></Button
+									>
 									<FormDialog action="?/save" title={p.name} variant="ghost" size="sm" wide>
 										{#snippet trigger()}<Pencil /><span class="sr-only sm:not-sr-only"
 												>{t('common.edit')}</span

@@ -2,6 +2,7 @@
 	import ArrowRight from '@lucide/svelte/icons/arrow-right';
 	import Users from '@lucide/svelte/icons/users';
 	import ListChecks from '@lucide/svelte/icons/list-checks';
+	import MapPin from '@lucide/svelte/icons/map-pin';
 	import BellRing from '@lucide/svelte/icons/bell-ring';
 	import * as Card from '#lib/components/ui/card/index.js';
 	import * as Alert from '#lib/components/ui/alert/index.js';
@@ -57,6 +58,9 @@
 										n: ev.criteria
 									})}</span
 								>
+								{#if ev.venue}<span class="inline-flex items-center gap-1.5"
+										><MapPin class="size-4" />{ev.venue}</span
+									>{/if}
 							</div>
 							{#if ev.submitted_at && isSubmitted(ev.status)}
 								<p class="text-sm">

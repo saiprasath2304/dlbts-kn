@@ -2,6 +2,7 @@
 	import LayoutDashboard from '@lucide/svelte/icons/layout-dashboard';
 	import Trophy from '@lucide/svelte/icons/trophy';
 	import FileText from '@lucide/svelte/icons/file-text';
+	import MessageSquareText from '@lucide/svelte/icons/message-square-text';
 	import ClipboardCheck from '@lucide/svelte/icons/clipboard-check';
 	import Inbox from '@lucide/svelte/icons/inbox';
 	import CalendarDays from '@lucide/svelte/icons/calendar-days';
@@ -27,7 +28,8 @@
 			items: [
 				{ href: '/admin', key: 'nav.dashboard', icon: LayoutDashboard },
 				{ href: '/admin/results', key: 'nav.results', icon: Trophy },
-				{ href: '/admin/reports', key: 'nav.reports', icon: FileText }
+				{ href: '/admin/reports', key: 'nav.reports', icon: FileText },
+				{ href: '/admin/feedback', key: 'nav.feedback', icon: MessageSquareText }
 			]
 		},
 		{

@@ -11,7 +11,8 @@ export const COLUMNS = [
 	'kind',
 	'affiliation',
 	'registration_no',
-	'notes'
+	'notes',
+	'members'
 ] as const;
 export const REQUIRED_COLUMNS = ['code', 'name', 'group_code', 'event_code'] as const;
 export const MAX_ROWS = 5000;
@@ -42,7 +43,9 @@ const ALIASES: Record<string, Column> = {
 	reg_no: 'registration_no',
 	notes: 'notes',
 	note: 'notes',
-	remarks: 'notes'
+	remarks: 'notes',
+	members: 'members',
+	team_members: 'members'
 };
 
 export interface ImportRow {
@@ -55,6 +58,7 @@ export interface ImportRow {
 	affiliation: string;
 	registration_no: string;
 	notes: string;
+	members: string;
 }
 
 export interface RowError {
@@ -117,7 +121,8 @@ export function normalizeRecords(
 			event_code: (v.event_code ?? '').toLowerCase(),
 			affiliation: v.affiliation ?? '',
 			registration_no: v.registration_no ?? '',
-			notes: v.notes ?? ''
+			notes: v.notes ?? '',
+			members: v.members ?? ''
 		});
 	});
 	if (rows.length === 0) return { rows, errors: [{ row: 0, code: 'EMPTY_FILE' }] };

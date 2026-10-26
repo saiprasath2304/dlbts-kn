@@ -45,6 +45,11 @@ export class LiveRefresh {
 					{ event: '*', schema: 'public', table: 'correction_requests' },
 					refresh
 				)
+				.on(
+					'postgres_changes',
+					{ event: '*', schema: 'public', table: 'participant_requests' },
+					refresh
+				)
 				.subscribe((status) => {
 					this.live = status === 'SUBSCRIBED';
 				});

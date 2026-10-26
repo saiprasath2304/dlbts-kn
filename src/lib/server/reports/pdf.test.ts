@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import * as fontkit from 'fontkit';
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
-import { renderReport, type FinalEventEntry } from './pdf';
+import { renderFeedback, renderReport, type FinalEventEntry } from './pdf';
 import { reportFonts } from './fonts';
 import type { FinalSnapshot } from '#lib/results.ts';
 
@@ -197,5 +197,42 @@ describe('PDF reports', () => {
 		const split = font.layout('கொ').glyphs.map((g) => g.codePoints.flat());
 		expect(split.length).toBe(3); // ெ + க + ா around the consonant
 		expect(split[1]).toEqual([0x0b95]);
+	});
+	it('renders a feedback report with remarks, Tamil text and optional marks', async () => {
+		const pdf = await renderFeedback({
+			title: 'DLBTS KN 2026',
+			locale: 'ta',
+			generatedAt: new Date(),
+			includeMarks: true,
+			participants: [
+				{
+					name: 'மாதிரி பங்கேற்பாளர்',
+					code: 'G1-001',
+					affiliation: 'Unit A',
+					members: null,
+					group: 'Group 1',
+					events: [
+						{
+							event: 'Sloka Chanting',
+							venue: 'Room 12',
+							judges: [
+								{
+									label: 1,
+									remark: 'Clear pronunciation, keep practising tune.',
+									total: 27,
+									max: 30
+								},
+								{ label: 2, remark: '', total: null, max: 30 }
+							]
+						}
+					]
+				}
+			]
+		});
+		const text = await extractText(pdf);
+		expect(text).toContain('Clear pronunciation');
+		expect(text).toContain('Room 12');
+		expect(text).toContain('27');
+		expect(text).toMatch(/[஀-௿]{3,}/);
 	});
 });

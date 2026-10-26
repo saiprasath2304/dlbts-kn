@@ -10,7 +10,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		db
 			.from('judge_assignments')
 			.select(
-				'event_id, events(id, name, code, description, display_order, groups(name, code, display_order))'
+				'event_id, events(id, name, code, description, venue, display_order, groups(name, code, display_order))'
 			)
 			.eq('judge_id', judge.id)
 			.eq('is_active', true),
@@ -35,6 +35,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 				id: e.id,
 				name: e.name,
 				description: e.description,
+				venue: e.venue,
 				group: e.groups?.name ?? '',
 				groupOrder: e.groups?.display_order ?? 0,
 				order: e.display_order,

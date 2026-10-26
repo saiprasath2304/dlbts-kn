@@ -9,19 +9,45 @@ import type { Actions, PageServerLoad } from './$types';
 export const load: PageServerLoad = async ({ locals, params }) => {
 	if (!isUuid(params.eventId)) error(404, { message: 'Not found' });
 	const db = locals.supabase;
-	const [{ data: event }, { data: results, error: err }, { data: corrections }] = await Promise.all(
-		[
-			db.from('events').select('id, name, groups(name)').eq('id', params.eventId).maybeSingle(),
-			db.rpc('get_event_results', { p_event_id: params.eventId }),
-			db
-				.from('correction_requests')
-				.select('id, message, status, created_at')
-				.eq('event_id', params.eventId)
-				.order('created_at', { ascending: false })
-		]
-	);
+	const [
+		{ data: event },
+		{ data: results, error: err },
+		{ data: corrections },
+		{ data: members },
+		{ data: ties }
+	] = await Promise.all([
+		db.from('events').select('id, name, groups(name)').eq('id', params.eventId).maybeSingle(),
+		db.rpc('get_event_results', { p_event_id: params.eventId }),
+		db
+			.from('correction_requests')
+			.select('id, message, status, created_at')
+			.eq('event_id', params.eventId)
+			.order('created_at', { ascending: false }),
+		db
+			.from('event_participants')
+			.select('participants(id, kind, members)')
+			.eq('event_id', params.eventId),
+		db.rpc('event_tie_alerts', { p_event_id: params.eventId })
+	]);
 	if (!event || err) error(404, { message: 'Not found' });
-	return { event, results: results as unknown as EventResults, corrections: corrections ?? [] };
+	const teams = Object.fromEntries(
+		(members ?? [])
+			.filter((m) => m.participants)
+			.map((m) => [
+				m.participants!.id,
+				{ kind: m.participants!.kind, members: m.participants!.members }
+			])
+	);
+	return {
+		event,
+		results: results as unknown as EventResults,
+		corrections: corrections ?? [],
+		teams,
+		provisionalTies: (ties ?? []) as {
+			place: number;
+			participants: { participant_id: string; name: string; code: string }[];
+		}[]
+	};
 };
 
 export const actions: Actions = {

@@ -8,10 +8,16 @@
 	import PageHeader from '#lib/components/app/PageHeader.svelte';
 	import FormFeedback from '#lib/components/app/FormFeedback.svelte';
 	import ConfirmForm from '#lib/components/app/ConfirmForm.svelte';
+	import FormDialog from '#lib/components/app/FormDialog.svelte';
+	import AppSelect from '#lib/components/app/AppSelect.svelte';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import { Label } from '#lib/components/ui/label/index.js';
+	import { Textarea } from '#lib/components/ui/textarea/index.js';
 	import { t, locale } from '#lib/i18n/t.svelte.ts';
 	import { formatDateTime } from '#lib/i18n/index.ts';
 
 	let { data, form } = $props();
+	const pendingPart = $derived(data.participantRequests.filter((r) => r.status === 'pending'));
 	const pendingReopen = $derived(data.reopenings.filter((r) => r.status === 'pending'));
 	const openCorr = $derived(
 		data.corrections.filter((c) => c.status === 'open' || c.status === 'responded')
@@ -52,7 +58,149 @@
 				>{t('request.history')}<Badge variant="neutral" class="ml-1.5">{closed.length}</Badge
 				></Tabs.Trigger
 			>
+			<Tabs.Trigger value="participants" class="px-4 py-2"
+				>{t('admin.requests.participants')}<Badge
+					variant={pendingPart.length ? 'warning' : 'neutral'}
+					class="ml-1.5">{pendingPart.length}</Badge
+				></Tabs.Trigger
+			>
 		</Tabs.List>
+
+		<Tabs.Content value="participants" class="mt-4 grid gap-4">
+			{#each pendingPart as r (r.id)}
+				<Card.Root>
+					<Card.Header>
+						<div class="flex flex-wrap items-start justify-between gap-2">
+							<div>
+								<Card.Title class="text-lg">
+									{t(`preq.type_${r.request_type}`)}{#if r.name}: {r.name}{:else if r.participants}: {r
+											.participants.name} ({r.participants.code}){/if}
+								</Card.Title>
+								<Card.Description>
+									{r.events?.groups?.name} – {r.events?.name} · {t('admin.requests.requested_by', {
+										name: r.profiles?.display_name ?? ''
+									})} · {formatDateTime(locale(), r.created_at)}
+								</Card.Description>
+							</div>
+							<Badge variant="warning">{t('request.pending')}</Badge>
+						</div>
+					</Card.Header>
+					<Card.Content class="grid gap-2">
+						<blockquote class="border-primary/40 border-l-4 pl-3">{r.details}</blockquote>
+						{#if r.request_type === 'change'}<p class="text-muted-foreground text-sm">
+								{t('admin.requests.change_hint')}
+							</p>{/if}
+					</Card.Content>
+					<Card.Footer class="flex flex-wrap gap-2">
+						{#if r.request_type === 'add'}
+							<FormDialog
+								action="?/resolveParticipant"
+								title={t('admin.requests.approve_add')}
+								submitLabel={t('admin.requests.approve_add')}
+								wide
+							>
+								{#snippet trigger()}{t('admin.requests.approve_add')}{/snippet}
+								<input type="hidden" name="id" value={r.id} />
+								<input type="hidden" name="approve" value="true" />
+								<div class="grid gap-4 sm:grid-cols-2">
+									<div class="grid gap-2 sm:col-span-2">
+										<Label for="pa-name-{r.id}">{t('common.name')}</Label>
+										<Input id="pa-name-{r.id}" name="name" required value={r.name ?? ''} />
+									</div>
+									<div class="grid gap-2">
+										<Label for="pa-code-{r.id}">{t('common.code')}</Label>
+										<Input id="pa-code-{r.id}" name="code" required />
+										<p class="text-muted-foreground text-xs">{t('admin.participants.code_help')}</p>
+									</div>
+									<div class="grid gap-2">
+										<Label for="pa-kind-{r.id}">{t('admin.participants.kind')}</Label>
+										<AppSelect
+											id="pa-kind-{r.id}"
+											name="kind"
+											value="individual"
+											options={[
+												{ value: 'individual', label: t('admin.participants.kind_individual') },
+												{ value: 'team', label: t('admin.participants.kind_team') }
+											]}
+										/>
+									</div>
+									<div class="grid gap-2">
+										<Label for="pa-aff-{r.id}">{t('admin.participants.affiliation')}</Label>
+										<Input id="pa-aff-{r.id}" name="affiliation" />
+									</div>
+									<div class="grid gap-2">
+										<Label for="pa-mem-{r.id}">{t('admin.participants.members')}</Label>
+										<Input id="pa-mem-{r.id}" name="members" />
+									</div>
+									<div class="grid gap-2 sm:col-span-2">
+										<Label for="pa-note-{r.id}">{t('common.note_optional')}</Label>
+										<Textarea id="pa-note-{r.id}" name="reason" />
+									</div>
+								</div>
+							</FormDialog>
+						{:else}
+							<ConfirmForm
+								action="?/resolveParticipant"
+								label={r.request_type === 'remove'
+									? t('admin.requests.approve_remove')
+									: t('admin.requests.approve_change')}
+								title={r.request_type === 'remove'
+									? t('admin.requests.approve_remove')
+									: t('admin.requests.approve_change')}
+								optionalNote
+								variant="default"
+							>
+								{#snippet fields()}<input type="hidden" name="id" value={r.id} /><input
+										type="hidden"
+										name="approve"
+										value="true"
+									/>{/snippet}
+							</ConfirmForm>
+						{/if}
+						<ConfirmForm
+							action="?/resolveParticipant"
+							label={t('admin.requests.reject')}
+							title={t('admin.requests.reject')}
+							requireReason
+							danger
+						>
+							{#snippet fields()}<input type="hidden" name="id" value={r.id} /><input
+									type="hidden"
+									name="approve"
+									value="false"
+								/>{/snippet}
+						</ConfirmForm>
+					</Card.Footer>
+				</Card.Root>
+			{:else}
+				<p class="text-muted-foreground">{t('admin.requests.none')}</p>
+			{/each}
+			{#if data.participantRequests.some((r) => r.status !== 'pending')}
+				<Card.Root class="py-0">
+					<Table.Root>
+						<Table.Body>
+							{#each data.participantRequests.filter((r) => r.status !== 'pending') as r (r.id)}
+								<Table.Row>
+									<Table.Cell class="text-muted-foreground text-xs"
+										>{formatDateTime(locale(), r.resolved_at ?? r.created_at)}</Table.Cell
+									>
+									<Table.Cell class="whitespace-normal">
+										<strong>{t(`preq.type_${r.request_type}`)}</strong>{#if r.name}: {r.name}{:else if r.participants}:
+											{r.participants.name}{/if}
+										· {r.events?.name}<br /><span class="text-sm">{r.details}</span>
+									</Table.Cell>
+									<Table.Cell
+										><Badge variant={r.status === 'approved' ? 'success' : 'neutral'}
+											>{t(`request.${r.status}`)}</Badge
+										></Table.Cell
+									>
+								</Table.Row>
+							{/each}
+						</Table.Body>
+					</Table.Root>
+				</Card.Root>
+			{/if}
+		</Tabs.Content>
 
 		<Tabs.Content value="reopen" class="mt-4 grid gap-4">
 			{#each pendingReopen as r (r.id)}

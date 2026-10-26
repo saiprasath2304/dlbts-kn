@@ -9,7 +9,7 @@
 
 do $setup$
 declare
-  v_admin_password text := 'Dlbts@KN2026';   -- <<< CHANGE THIS (at least 8 characters)
+  v_admin_password text := 'CHANGE-ME';   -- <<< CHANGE THIS (at least 8 characters)
   v_admin uuid;
   v_group uuid;
   v_event uuid;

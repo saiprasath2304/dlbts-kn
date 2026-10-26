@@ -14,6 +14,7 @@
 		affiliation: string | null;
 		registration_no: string | null;
 		notes: string | null;
+		members?: string | null;
 	};
 	let {
 		participant,
@@ -78,6 +79,19 @@
 	<div class="grid gap-2">
 		<Label for="p-notes-{sfx}">{t('admin.participants.notes')}</Label>
 		<Input id="p-notes-{sfx}" name="notes" value={participant?.notes ?? ''} />
+	</div>
+	<div class="grid gap-2 sm:col-span-2">
+		<Label for="p-members-{sfx}">{t('admin.participants.members')}</Label>
+		<Input
+			id="p-members-{sfx}"
+			name="members"
+			maxlength={1000}
+			value={participant?.members ?? ''}
+			aria-describedby="p-members-help-{sfx}"
+		/>
+		<p class="text-muted-foreground text-xs" id="p-members-help-{sfx}">
+			{t('admin.participants.members_help')}
+		</p>
 	</div>
 	{#if !participant && events.length}
 		<div class="grid gap-2 sm:col-span-2">

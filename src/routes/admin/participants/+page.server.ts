@@ -16,7 +16,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	let query = db
 		.from('participants')
 		.select(
-			'id, code, name, kind, affiliation, registration_no, notes, is_active, group_id, groups(name), event_participants(is_active, event_id, events(name))'
+			'id, code, name, kind, affiliation, registration_no, notes, members, memento_given, memento_given_at, is_active, group_id, groups(name), event_participants(is_active, event_id, events(name))'
 		)
 		.order('code')
 		.limit(500);
@@ -39,6 +39,15 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 };
 
 export const actions: Actions = {
+	memento: async ({ request, locals }) => {
+		const f = await request.formData();
+		const { error } = await locals.supabase.rpc('set_memento', {
+			p_participant_id: str(f, 'id'),
+			p_given: bool(f, 'given')
+		});
+		if (error) return failWith(locals.locale, error);
+		return { success: translate(locals.locale, 'common.saved_ok') };
+	},
 	save: async ({ request, locals }) => {
 		const f = await request.formData();
 		const id = str(f, 'id');
@@ -49,7 +58,8 @@ export const actions: Actions = {
 			group_id: optStr(f, 'group_id'),
 			affiliation: optStr(f, 'affiliation'),
 			registration_no: optStr(f, 'registration_no'),
-			notes: optStr(f, 'notes')
+			notes: optStr(f, 'notes'),
+			members: optStr(f, 'members')
 		};
 		if (!CODE_RE.test(row.code) || !row.name) {
 			return fail(400, { error: translate(locals.locale, 'admin.participants.code_help') });

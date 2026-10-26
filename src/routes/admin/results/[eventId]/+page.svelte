@@ -98,6 +98,18 @@
 		</Card.Content>
 	</Card.Root>
 
+	{#if !r.complete && data.provisionalTies.length}
+		<Alert.Root variant="warning">
+			<TriangleAlert />
+			<Alert.Title>{t('ties.admin_title')}</Alert.Title>
+			<Alert.Description>
+				{#each data.provisionalTies as tie (tie.place)}
+					<p>{ordinal(tie.place, locale())}: {tie.participants.map((p) => p.name).join(', ')}</p>
+				{/each}
+			</Alert.Description>
+		</Alert.Root>
+	{/if}
+
 	{#if !r.complete || !r.participants}
 		<Alert.Root variant="info" data-testid="results-hidden"
 			><EyeOff /><Alert.Title>{t('admin.results.hidden')}</Alert.Title></Alert.Root
@@ -130,6 +142,11 @@
 									{ordinal(w.final_rank!, locale())}
 								</div>
 								<div class="truncate font-bold">{w.name}</div>
+								{#if data.teams[w.participant_id]?.members}<div
+										class="text-muted-foreground truncate text-xs"
+									>
+										{data.teams[w.participant_id].members}
+									</div>{/if}
 								<div class="text-muted-foreground text-sm">
 									{w.code} · {formatMark(w.aggregate)}
 								</div>
@@ -161,7 +178,18 @@
 									>{/if}
 							</Table.Cell>
 							<Table.Cell class="whitespace-normal">
-								<div class="font-semibold">{p.name}</div>
+								<div class="font-semibold">
+									{p.name}
+									{#if data.teams[p.participant_id]?.kind === 'team'}<Badge
+											variant="secondary"
+											class="ml-1">{t('score.team')}</Badge
+										>{/if}
+								</div>
+								{#if data.teams[p.participant_id]?.members}<div
+										class="text-muted-foreground text-xs"
+									>
+										{data.teams[p.participant_id].members}
+									</div>{/if}
 								<div class="text-muted-foreground text-sm">
 									<span class="font-mono">{p.code}</span>{#if p.affiliation}
 										· {p.affiliation}{/if}

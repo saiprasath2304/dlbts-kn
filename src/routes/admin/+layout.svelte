@@ -11,6 +11,7 @@
 	const titles: [string, string][] = [
 		['/admin/results', 'nav.results'],
 		['/admin/reports', 'nav.reports'],
+		['/admin/feedback', 'nav.feedback'],
 		['/admin/submissions', 'nav.submissions'],
 		['/admin/requests', 'nav.requests'],
 		['/admin/events', 'nav.events'],

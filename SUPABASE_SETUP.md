@@ -104,6 +104,17 @@ variables, never in code, chat messages or screenshots.
 
 ---
 
+## Updates (run once each, in order)
+
+If you set up the project before an update, run its file in **SQL Editor → New query → Run**.
+Each update is safe to run again. A brand-new project only needs 01 and 02 (01 already contains every update).
+
+| Date       | File                                                     | Adds                                                                                                                                                 |
+| ---------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-10-26 | `supabase/setup/03_update_2026-10-26_judge_features.sql` | Room/venue for events, team members, memento tick, judge remarks and feedback reports, judge → admin participant requests, tie alerts during judging |
+
+Run the update **before** pushing the matching app version to GitHub, otherwise the new pages will show errors until it is run.
+
 ## Managing accounts with SQL (optional)
 
 The admin can do all of this in the app (**Judges** page). If you prefer SQL, open

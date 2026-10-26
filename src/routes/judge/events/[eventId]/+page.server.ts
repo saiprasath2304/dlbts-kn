@@ -28,6 +28,26 @@ export const actions: Actions = {
 		if (error) return failWith(locals.locale, error);
 		return { success: translate(locals.locale, 'request.reopen_sent') };
 	},
+	requestParticipant: async ({ request, locals, params }) => {
+		requireJudge(locals);
+		const form = await request.formData();
+		const type = String(form.get('request_type') ?? '');
+		const details = String(form.get('details') ?? '').trim();
+		if (details.length < 3)
+			return fail(400, { error: translate(locals.locale, 'common.reason_required') });
+		const participant = String(form.get('participant_id') ?? '');
+		const { error } = await locals.supabase.rpc('request_participant_change', {
+			p_event_id: params.eventId,
+			p_type: type,
+			p_participant_id: /^[0-9a-f-]{36}$/i.test(participant)
+				? participant
+				: (null as unknown as string),
+			p_name: String(form.get('name') ?? '').trim(),
+			p_details: details
+		});
+		if (error) return failWith(locals.locale, error);
+		return { success: translate(locals.locale, 'preq.sent') };
+	},
 	respondCorrection: async ({ request, locals }) => {
 		requireJudge(locals);
 		const form = await request.formData();

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Plus from '@lucide/svelte/icons/plus';
+	import MapPin from '@lucide/svelte/icons/map-pin';
 	import FolderPlus from '@lucide/svelte/icons/folder-plus';
 	import Pencil from '@lucide/svelte/icons/pencil';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
@@ -109,6 +110,11 @@
 													>{e.name}</a
 												>
 												<span class="text-muted-foreground ml-1 font-mono text-xs">{e.code}</span>
+												{#if e.venue}<div
+														class="text-muted-foreground inline-flex items-center gap-1 text-xs"
+													>
+														<MapPin class="size-3" />{e.venue}
+													</div>{/if}
 												{#if !e.is_active}<Badge variant="neutral" class="ml-1"
 														>{t('common.inactive')}</Badge
 													>{/if}

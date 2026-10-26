@@ -14,6 +14,7 @@
 		name: string;
 		description: string | null;
 		instructions: string | null;
+		venue?: string | null;
 		score_precision: number;
 		display_order: number;
 		is_active: boolean;
@@ -73,6 +74,19 @@
 			type="number"
 			value={event?.display_order ?? 0}
 		/>
+	</div>
+	<div class="grid gap-2 sm:col-span-2">
+		<Label for="e-venue-{sfx}">{t('admin.events.venue')}</Label>
+		<Input
+			id="e-venue-{sfx}"
+			name="venue"
+			maxlength={120}
+			value={event?.venue ?? ''}
+			aria-describedby="e-venue-help-{sfx}"
+		/>
+		<p class="text-muted-foreground text-xs" id="e-venue-help-{sfx}">
+			{t('admin.events.venue_help')}
+		</p>
 	</div>
 	<div class="grid gap-2 sm:col-span-2">
 		<Label for="e-desc-{sfx}">{t('common.description')}</Label>

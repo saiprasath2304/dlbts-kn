@@ -394,3 +394,147 @@ function renderFinal(
 		}
 	}
 }
+
+// -----------------------------------------------------------------------------
+// Feedback report: one page per participant with the judges' remarks.
+// -----------------------------------------------------------------------------
+export interface FeedbackParticipant {
+	name: string;
+	code: string;
+	affiliation: string | null;
+	members: string | null;
+	group: string;
+	events: {
+		event: string;
+		venue: string | null;
+		judges: { label: number; remark: string; total: number | null; max: number }[];
+	}[];
+}
+
+export async function renderFeedback(input: {
+	title: string;
+	locale: Locale;
+	generatedAt: Date;
+	includeMarks: boolean;
+	participants: FeedbackParticipant[];
+}): Promise<Buffer> {
+	const t = (k: string, p?: Record<string, string | number>) => translate(input.locale, k, p);
+	const fonts = reportFonts();
+	const doc = new PDFDocument({
+		size: 'A4',
+		margin: M,
+		bufferPages: true,
+		font: fonts.lat as unknown as string,
+		info: { Title: `${input.title} – ${t('report.feedback_title')}` },
+		lang: input.locale === 'ta' ? 'ta-IN' : 'en-IN'
+	});
+	for (const [name, data] of Object.entries(fonts)) doc.registerFont(name, data);
+	const chunks: Buffer[] = [];
+	doc.on('data', (c: Buffer) => chunks.push(c));
+	const done = new Promise<void>((resolve) => doc.on('end', resolve));
+	const W = A4.width - 2 * M;
+
+	input.participants.forEach((p, i) => {
+		if (i > 0) doc.addPage();
+		const LOGO = 46;
+		doc.image(reportLogo(), M, M, { width: LOGO, height: LOGO });
+		const tx = M + LOGO + 12;
+		write(doc, input.title, {
+			x: tx,
+			y: M + 2,
+			size: 15,
+			bold: true,
+			width: W - LOGO - 12,
+			color: COLORS.heading
+		});
+		write(doc, t('report.feedback_title'), {
+			x: tx,
+			y: doc.y,
+			size: 11,
+			bold: true,
+			color: COLORS.accent
+		});
+		doc.x = M;
+		doc.y = Math.max(doc.y, M + LOGO) + 14;
+
+		write(doc, p.name, { x: M, y: doc.y, size: 17, bold: true, width: W });
+		const sub = [p.code, p.group, p.affiliation].filter(Boolean).join(' · ');
+		write(doc, sub, { x: M, y: doc.y, size: 10, color: COLORS.muted, width: W });
+		if (p.members)
+			write(doc, `${t('score.members')}: ${p.members}`, {
+				x: M,
+				y: doc.y,
+				size: 10,
+				color: COLORS.muted,
+				width: W
+			});
+		doc.moveDown(0.6);
+
+		for (const e of p.events) {
+			ensureSpace(doc, 70);
+			const top = doc.y;
+			doc.rect(M, top, W, 22).fill(COLORS.head);
+			write(doc, e.venue ? `${e.event}  ·  ${e.venue}` : e.event, {
+				x: M + 8,
+				y: top + 5,
+				size: 11,
+				bold: true,
+				width: W - 16
+			});
+			doc.x = M;
+			doc.y = top + 30;
+			const withRemarks = e.judges.filter(
+				(j) => j.remark.trim() || (input.includeMarks && j.total !== null)
+			);
+			if (withRemarks.length === 0) {
+				para(doc, t('report.no_remarks'), 10, COLORS.muted);
+			}
+			for (const j of withRemarks) {
+				ensureSpace(doc, 40);
+				let label = t('report.judge_n', { n: j.label });
+				if (input.includeMarks && j.total !== null)
+					label += `  ·  ${t('report.total_marks')}: ${formatMark(j.total)} / ${formatMark(j.max)}`;
+				write(doc, label, {
+					x: M + 8,
+					y: doc.y,
+					size: 10,
+					bold: true,
+					color: COLORS.accent,
+					width: W - 16
+				});
+				if (j.remark.trim())
+					write(doc, j.remark.trim(), {
+						x: M + 8,
+						y: doc.y + 2,
+						size: 11,
+						width: W - 16,
+						lineGap: 2
+					});
+				doc.moveDown(0.7);
+			}
+			doc.moveDown(0.4);
+		}
+	});
+	if (input.participants.length === 0) para(doc, t('report.no_remarks'), 11, COLORS.muted);
+
+	const range = doc.bufferedPageRange();
+	for (let i = range.start; i < range.start + range.count; i++) {
+		doc.switchToPage(i);
+		write(
+			doc,
+			`${t('report.generated', { time: formatDateTime(input.locale, input.generatedAt) })} · ${t('report.page', { n: i + 1 })}`,
+			{
+				x: M,
+				y: A4.height - M + 10,
+				size: 8,
+				color: COLORS.muted,
+				width: W,
+				align: 'center',
+				lineBreak: false
+			}
+		);
+	}
+	doc.end();
+	await done;
+	return Buffer.concat(chunks);
+}

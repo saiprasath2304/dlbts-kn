@@ -3,7 +3,7 @@ import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const db = locals.supabase;
-	const [progressRes, judgesRes, assignRes, groupsRes] = await Promise.all([
+	const [progressRes, judgesRes, assignRes, groupsRes, venuesRes] = await Promise.all([
 		db.rpc('admin_event_progress'),
 		db
 			.from('profiles')
@@ -12,7 +12,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			.eq('is_active', true)
 			.order('username'),
 		db.from('judge_assignments').select('event_id, judge_id').eq('is_active', true),
-		db.from('groups').select('id').eq('is_active', true)
+		db.from('groups').select('id').eq('is_active', true),
+		db.from('events').select('id, venue')
 	]);
 
 	const all = (progressRes.data ?? []).filter((e) => e.event_active);
@@ -63,7 +64,11 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			complete: rows.filter(isComplete).length,
 			waiting: rows.filter((r) => !isComplete(r)).length
 		},
-		rows: rows.map((r) => ({ ...r, complete: isComplete(r) })),
+		rows: rows.map((r) => ({
+			...r,
+			complete: isComplete(r),
+			venue: (venuesRes.data ?? []).find((v) => v.id === r.event_id)?.venue ?? null
+		})),
 		token: await realtimeToken(db),
 		loadedAt: new Date().toISOString()
 	};
