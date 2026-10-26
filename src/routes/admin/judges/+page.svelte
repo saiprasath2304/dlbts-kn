@@ -15,7 +15,8 @@
 	import FormFeedback from '#lib/components/app/FormFeedback.svelte';
 	import FormDialog from '#lib/components/app/FormDialog.svelte';
 	import ConfirmForm from '#lib/components/app/ConfirmForm.svelte';
-	import NativeSelect from '#lib/components/app/NativeSelect.svelte';
+	import AppSelect from '#lib/components/app/AppSelect.svelte';
+	import { eventOptions, all } from '#lib/options.ts';
 	import { t } from '#lib/i18n/t.svelte.ts';
 
 	let { data, form } = $props();
@@ -64,15 +65,13 @@
 					<div class="grid gap-2 sm:col-span-2">
 						<Label for="j-event">{t('admin.judges.suggest_for')}</Label>
 						<div class="flex gap-2">
-							<NativeSelect id="j-event" name="event_id" bind:value={eventId} onchange={suggest}>
-								<option value="">{t('common.none')}</option>
-								{#each data.groups as g (g.id)}
-									<optgroup label={g.name}
-										>{#each g.events as e (e.id)}<option value={e.id}>{e.name}</option
-											>{/each}</optgroup
-									>
-								{/each}
-							</NativeSelect>
+							<AppSelect
+								id="j-event"
+								name="event_id"
+								bind:value={eventId}
+								onValueChange={suggest}
+								options={[all(t('common.none')), ...eventOptions(data.groups)]}
+							/>
 							{#if eventId}<Button
 									type="button"
 									variant="outline"

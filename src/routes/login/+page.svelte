@@ -1,53 +1,73 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
+	import Eye from '@lucide/svelte/icons/eye';
+	import EyeOff from '@lucide/svelte/icons/eye-off';
+	import Loader from '@lucide/svelte/icons/loader-circle';
 	import CircleAlert from '@lucide/svelte/icons/circle-alert';
-	import * as Card from '#lib/components/ui/card/index.js';
-	import * as Alert from '#lib/components/ui/alert/index.js';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { Input } from '#lib/components/ui/input/index.js';
 	import { Label } from '#lib/components/ui/label/index.js';
-	import { Checkbox } from '#lib/components/ui/checkbox/index.js';
+	import { progress, withProgress } from '#lib/progress.svelte.ts';
 	import { t } from '#lib/i18n/t.svelte.ts';
 
 	let { form } = $props();
 	let busy = $state(false);
 	let show = $state(false);
+	const locale = $derived(page.data.locale);
 </script>
 
-<svelte:head><title>{t('login.title')}</title></svelte:head>
+<svelte:head><title>{t('login.title')} · {page.data.appTitle}</title></svelte:head>
 
-<div class="mx-auto max-w-md pt-4">
-	<Card.Root class="shadow-lg">
-		<Card.Header class="items-center text-center">
+<div class="bg-muted/40 relative flex min-h-svh flex-col items-center justify-center px-4 py-10">
+	<form method="POST" action="/lang" use:enhance={withProgress()} class="absolute top-4 right-4">
+		<input type="hidden" name="locale" value={locale === 'ta' ? 'en' : 'ta'} />
+		<input type="hidden" name="next" value="/login" />
+		<Button type="submit" variant="ghost" size="sm" lang={locale === 'ta' ? 'en' : 'ta'}>
+			<span class="sr-only">{t('lang.label')}: </span>{t('lang.switch_to')}
+		</Button>
+	</form>
+
+	<main id="main" class="w-full max-w-sm">
+		<div class="mb-8 flex flex-col items-center text-center">
 			<img
 				src="/logo.png"
 				alt="Sri Sathya Sai Balvikas"
-				width="96"
-				height="96"
-				class="mx-auto rounded-full shadow-md"
+				width="72"
+				height="72"
+				class="rounded-full shadow-sm"
 			/>
-			<p class="text-primary mt-2 text-lg font-bold">{page.data.appTitle}</p>
-			<Card.Title class="text-2xl">{t('login.title')}</Card.Title>
-			<Card.Description class="text-base">{t('login.subtitle')}</Card.Description>
-		</Card.Header>
-		<Card.Content>
+			<p class="mt-4 text-lg font-semibold tracking-tight">{page.data.appTitle}</p>
+			<p class="text-muted-foreground text-sm">{t('login.subtitle')}</p>
+		</div>
+
+		<div class="bg-card rounded-xl border p-6 shadow-sm">
+			<h1 class="mb-5 text-xl font-semibold tracking-tight">{t('login.title')}</h1>
 			<form
 				method="POST"
-				class="grid gap-5"
+				class="grid gap-4"
 				use:enhance={() => {
 					busy = true;
+					progress.forms++;
 					return async ({ update }) => {
-						busy = false;
-						await update({ reset: false });
+						try {
+							await update({ reset: false });
+						} finally {
+							busy = false;
+							progress.forms--;
+						}
 					};
 				}}
 			>
 				{#if form?.error}
-					<Alert.Root variant="destructive" role="alert" id="login-error">
-						<CircleAlert />
-						<Alert.Title>{form.error}</Alert.Title>
-					</Alert.Root>
+					<div
+						class="border-destructive/30 bg-destructive/5 text-destructive flex items-start gap-2 rounded-lg border px-3 py-2.5 text-sm"
+						role="alert"
+						id="login-error"
+					>
+						<CircleAlert class="mt-0.5 size-4 shrink-0" />
+						<span>{form.error}</span>
+					</div>
 				{/if}
 				<div class="grid gap-2">
 					<Label for="username">{t('login.username')}</Label>
@@ -61,27 +81,38 @@
 						required
 						value={form?.username ?? ''}
 						aria-describedby={form?.error ? 'login-error' : undefined}
+						class="h-11"
 					/>
 				</div>
 				<div class="grid gap-2">
 					<Label for="password">{t('login.password')}</Label>
-					<Input
-						id="password"
-						name="password"
-						type={show ? 'text' : 'password'}
-						autocomplete="current-password"
-						required
-					/>
-					<div class="flex items-center gap-2 pt-1">
-						<Checkbox id="show-password" bind:checked={show} />
-						<Label for="show-password" class="font-normal">{t('login.show_password')}</Label>
+					<div class="relative">
+						<Input
+							id="password"
+							name="password"
+							type={show ? 'text' : 'password'}
+							autocomplete="current-password"
+							required
+							class="h-11 pr-11"
+						/>
+						<button
+							type="button"
+							class="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 absolute top-1/2 right-1 grid size-9 -translate-y-1/2 place-items-center rounded-md outline-none focus-visible:ring-3"
+							onclick={() => (show = !show)}
+							aria-label={t('login.show_password')}
+							aria-pressed={show}
+						>
+							{#if show}<EyeOff class="size-4" />{:else}<Eye class="size-4" />{/if}
+						</button>
 					</div>
 				</div>
-				<Button type="submit" size="xl" class="w-full" disabled={busy}>
-					{busy ? t('login.submitting') : t('login.submit')}
+				<Button type="submit" size="lg" class="mt-2 w-full" disabled={busy}>
+					{#if busy}<Loader class="animate-spin" />{t('login.submitting')}{:else}{t(
+							'login.submit'
+						)}{/if}
 				</Button>
-				<p class="text-muted-foreground text-center text-sm">{t('login.help')}</p>
 			</form>
-		</Card.Content>
-	</Card.Root>
+		</div>
+		<p class="text-muted-foreground mt-6 text-center text-sm">{t('login.help')}</p>
+	</main>
 </div>

@@ -4,6 +4,7 @@
 	import Pencil from '@lucide/svelte/icons/pencil';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import { enhance } from '$app/forms';
+	import { withProgress } from '#lib/progress.svelte.ts';
 	import * as Tabs from '#lib/components/ui/tabs/index.js';
 	import * as Card from '#lib/components/ui/card/index.js';
 	import * as Table from '#lib/components/ui/table/index.js';
@@ -43,7 +44,7 @@
 	{#if data.groups.length}
 		<Tabs.Root bind:value={tab} class="min-w-0">
 			<div>
-				<Tabs.List class="h-auto flex-wrap justify-start">
+				<Tabs.List variant="line" class="h-auto flex-wrap justify-start">
 					{#each data.groups as g (g.id)}
 						<Tabs.Trigger value={g.id} class="px-4 py-2 text-[0.95rem]">
 							{g.name}<Badge variant="neutral" class="ml-1.5">{g.events.length}</Badge>
@@ -71,7 +72,7 @@
 									<GroupForm group={g} />
 								</FormDialog>
 								{#if g.events.length === 0}
-									<form method="POST" action="?/deleteGroup" use:enhance>
+									<form method="POST" action="?/deleteGroup" use:enhance={withProgress()}>
 										<input type="hidden" name="id" value={g.id} />
 										<Button type="submit" variant="destructive" size="sm"
 											>{t('common.delete')}</Button

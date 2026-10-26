@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { withProgress } from '#lib/progress.svelte.ts';
 	import Eye from '@lucide/svelte/icons/eye';
 	import Download from '@lucide/svelte/icons/download';
 	import Mail from '@lucide/svelte/icons/mail';
@@ -14,7 +15,7 @@
 	import { Switch } from '#lib/components/ui/switch/index.js';
 	import PageHeader from '#lib/components/app/PageHeader.svelte';
 	import FormFeedback from '#lib/components/app/FormFeedback.svelte';
-	import NativeSelect from '#lib/components/app/NativeSelect.svelte';
+	import AppSelect from '#lib/components/app/AppSelect.svelte';
 	import { t, locale } from '#lib/i18n/t.svelte.ts';
 	import { formatDateTime } from '#lib/i18n/index.ts';
 
@@ -75,10 +76,15 @@
 				<div class="flex flex-wrap items-end gap-6">
 					<div class="grid w-48 gap-2">
 						<Label for="r-locale">{t('admin.reports.language')}</Label>
-						<NativeSelect id="r-locale" name="locale" bind:value={reportLocale}>
-							<option value="en">English</option>
-							<option value="ta">தமிழ்</option>
-						</NativeSelect>
+						<AppSelect
+							id="r-locale"
+							name="locale"
+							bind:value={reportLocale}
+							options={[
+								{ value: 'en', label: 'English' },
+								{ value: 'ta', label: 'தமிழ்' }
+							]}
+						/>
 					</div>
 					{#if kind === 'final'}
 						<div class="flex h-11 items-center gap-3">
@@ -150,7 +156,7 @@
 						</Table.Cell>
 						<Table.Cell class="text-right">
 							{#if data.emailConfigured && h.email_status !== 'not_requested'}
-								<form method="POST" action="?/resend" use:enhance>
+								<form method="POST" action="?/resend" use:enhance={withProgress()}>
 									<input type="hidden" name="id" value={h.id} />
 									<Button type="submit" variant="ghost" size="sm"
 										>{t('admin.reports.resend')}</Button

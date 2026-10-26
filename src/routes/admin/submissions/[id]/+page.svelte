@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { withProgress } from '#lib/progress.svelte.ts';
 	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
 	import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
 	import * as Tabs from '#lib/components/ui/tabs/index.js';
@@ -16,7 +17,8 @@
 	import FormFeedback from '#lib/components/app/FormFeedback.svelte';
 	import ConfirmForm from '#lib/components/app/ConfirmForm.svelte';
 	import StatusBadge from '#lib/components/app/StatusBadge.svelte';
-	import NativeSelect from '#lib/components/app/NativeSelect.svelte';
+	import AppSelect from '#lib/components/app/AppSelect.svelte';
+	import { all } from '#lib/options.ts';
 	import { t, locale } from '#lib/i18n/t.svelte.ts';
 	import { formatDateTime } from '#lib/i18n/index.ts';
 	import { formatMark, participantTotal } from '#lib/scoring.ts';
@@ -77,7 +79,7 @@
 	{/if}
 
 	<Tabs.Root value="marks">
-		<Tabs.List class="h-auto flex-wrap">
+		<Tabs.List variant="line" class="h-auto flex-wrap">
 			<Tabs.Trigger value="marks" class="px-4 py-2">{t('admin.submissions.details')}</Tabs.Trigger>
 			<Tabs.Trigger value="actions" class="px-4 py-2">{t('common.actions')}</Tabs.Trigger>
 			<Tabs.Trigger value="history" class="px-4 py-2">{t('request.history')}</Tabs.Trigger>
@@ -129,22 +131,30 @@
 				<Card.Root>
 					<Card.Header><Card.Title>{t('admin.submissions.edit_score')}</Card.Title></Card.Header>
 					<Card.Content>
-						<form method="POST" action="?/setScore" use:enhance class="grid gap-4">
+						<form method="POST" action="?/setScore" use:enhance={withProgress()} class="grid gap-4">
 							<div class="grid gap-2">
 								<Label for="es-p">{t('common.participant')}</Label>
-								<NativeSelect id="es-p" name="participant_id" required
-									>{#each data.participants as p (p.id)}<option value={p.id}
-											>{p.code} – {p.name}</option
-										>{/each}</NativeSelect
-								>
+								<AppSelect
+									id="es-p"
+									name="participant_id"
+									value={data.participants[0]?.id ?? ''}
+									options={data.participants.map((p) => ({
+										value: p.id,
+										label: `${p.code} – ${p.name}`
+									}))}
+								/>
 							</div>
 							<div class="grid gap-2">
 								<Label for="es-c">{t('judge.criteria')}</Label>
-								<NativeSelect id="es-c" name="criterion_id" required
-									>{#each data.criteria as c (c.id)}<option value={c.id}
-											>{c.name} (/ {formatMark(c.max_marks)})</option
-										>{/each}</NativeSelect
-								>
+								<AppSelect
+									id="es-c"
+									name="criterion_id"
+									value={data.criteria[0]?.id ?? ''}
+									options={data.criteria.map((c) => ({
+										value: c.id,
+										label: `${c.name} (/ ${formatMark(c.max_marks)})`
+									}))}
+								/>
 							</div>
 							<div class="grid gap-2">
 								<Label for="es-v">{t('score.title')}</Label>
@@ -161,15 +171,26 @@
 				<Card.Root>
 					<Card.Header><Card.Title>{t('admin.requests.new_correction')}</Card.Title></Card.Header>
 					<Card.Content>
-						<form method="POST" action="?/correction" use:enhance class="grid gap-4">
+						<form
+							method="POST"
+							action="?/correction"
+							use:enhance={withProgress()}
+							class="grid gap-4"
+						>
 							<div class="grid gap-2">
 								<Label for="cr-p">{t('admin.requests.participant_optional')}</Label>
-								<NativeSelect id="cr-p" name="participant_id">
-									<option value="">{t('common.all')}</option>
-									{#each data.participants as p (p.id)}<option value={p.id}
-											>{p.code} – {p.name}</option
-										>{/each}
-								</NativeSelect>
+								<AppSelect
+									id="cr-p"
+									name="participant_id"
+									value=""
+									options={[
+										all(t('common.all')),
+										...data.participants.map((p) => ({
+											value: p.id,
+											label: `${p.code} – ${p.name}`
+										}))
+									]}
+								/>
 							</div>
 							<fieldset class="grid gap-2">
 								<legend class="mb-1 text-sm font-medium"

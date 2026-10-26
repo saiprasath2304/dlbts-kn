@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { withProgress } from '#lib/progress.svelte.ts';
 	import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
 	import RotateCcw from '@lucide/svelte/icons/rotate-ccw';
 	import * as Tabs from '#lib/components/ui/tabs/index.js';
@@ -10,7 +11,7 @@
 	import { Label } from '#lib/components/ui/label/index.js';
 	import PageHeader from '#lib/components/app/PageHeader.svelte';
 	import FormFeedback from '#lib/components/app/FormFeedback.svelte';
-	import NativeSelect from '#lib/components/app/NativeSelect.svelte';
+	import AppSelect from '#lib/components/app/AppSelect.svelte';
 	import { t } from '#lib/i18n/t.svelte.ts';
 
 	let { data, form } = $props();
@@ -32,13 +33,18 @@
 	<FormFeedback {form} />
 
 	<Tabs.Root value="general">
-		<Tabs.List class="h-auto flex-wrap">
+		<Tabs.List variant="line" class="h-auto flex-wrap">
 			<Tabs.Trigger value="general" class="px-4 py-2">{t('admin.settings.general')}</Tabs.Trigger>
 			<Tabs.Trigger value="reset" class="px-4 py-2">{t('admin.settings.reset_title')}</Tabs.Trigger>
 		</Tabs.List>
 
 		<Tabs.Content value="general" class="mt-4">
-			<form method="POST" action="?/save" use:enhance class="grid grid-cols-1 gap-6">
+			<form
+				method="POST"
+				action="?/save"
+				use:enhance={withProgress()}
+				class="grid grid-cols-1 gap-6"
+			>
 				<Card.Root>
 					<Card.Header><Card.Title>{t('admin.settings.general')}</Card.Title></Card.Header>
 					<Card.Content class="grid gap-5">
@@ -68,10 +74,15 @@
 						</p>
 						<div class="grid gap-2 sm:max-w-xs">
 							<Label for="s-locale">{t('admin.settings.default_locale')}</Label>
-							<NativeSelect id="s-locale" name="default_locale" value={s.default_locale}>
-								<option value="en">English</option>
-								<option value="ta">தமிழ்</option>
-							</NativeSelect>
+							<AppSelect
+								id="s-locale"
+								name="default_locale"
+								value={s.default_locale}
+								options={[
+									{ value: 'en', label: 'English' },
+									{ value: 'ta', label: 'தமிழ்' }
+								]}
+							/>
 						</div>
 						<div class="bg-muted/60 flex items-center gap-4 rounded-xl p-4">
 							<img src="/logo.png" alt="" width="56" height="56" class="rounded-full" />

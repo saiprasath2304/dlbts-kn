@@ -9,7 +9,8 @@
 	import { Label } from '#lib/components/ui/label/index.js';
 	import PageHeader from '#lib/components/app/PageHeader.svelte';
 	import StatusBadge from '#lib/components/app/StatusBadge.svelte';
-	import NativeSelect from '#lib/components/app/NativeSelect.svelte';
+	import AppSelect from '#lib/components/app/AppSelect.svelte';
+	import { groupOptions, eventOptions, all } from '#lib/options.ts';
 	import { t, locale } from '#lib/i18n/t.svelte.ts';
 	import { formatDateTime } from '#lib/i18n/index.ts';
 	import { LiveRefresh } from '#lib/realtime.svelte.ts';
@@ -52,35 +53,45 @@
 			>
 				<div class="grid gap-2">
 					<Label for="s-group">{t('common.group')}</Label>
-					<NativeSelect id="s-group" name="group" value={data.filters.group}>
-						<option value="">{t('common.all')}</option>
-						{#each data.groups as g (g.id)}<option value={g.id}>{g.name}</option>{/each}
-					</NativeSelect>
+					<AppSelect
+						id="s-group"
+						name="group"
+						value={data.filters.group}
+						options={[all(t('common.all')), ...groupOptions(data.groups)]}
+					/>
 				</div>
 				<div class="grid gap-2">
 					<Label for="s-event">{t('common.event')}</Label>
-					<NativeSelect id="s-event" name="event" value={data.filters.event}>
-						<option value="">{t('common.all')}</option>
-						{#each data.groups as g (g.id)}
-							<optgroup label={g.name}
-								>{#each g.events as e (e.id)}<option value={e.id}>{e.name}</option>{/each}</optgroup
-							>
-						{/each}
-					</NativeSelect>
+					<AppSelect
+						id="s-event"
+						name="event"
+						value={data.filters.event}
+						options={[all(t('common.all')), ...eventOptions(data.groups)]}
+					/>
 				</div>
 				<div class="grid gap-2">
 					<Label for="s-judge">{t('common.judge')}</Label>
-					<NativeSelect id="s-judge" name="judge" value={data.filters.judge}>
-						<option value="">{t('common.all')}</option>
-						{#each data.judges as j (j.id)}<option value={j.id}>{j.display_name}</option>{/each}
-					</NativeSelect>
+					<AppSelect
+						id="s-judge"
+						name="judge"
+						value={data.filters.judge}
+						options={[
+							all(t('common.all')),
+							...data.judges.map((j) => ({ value: j.id, label: j.display_name }))
+						]}
+					/>
 				</div>
 				<div class="grid gap-2">
 					<Label for="s-status">{t('common.status')}</Label>
-					<NativeSelect id="s-status" name="status" value={data.filters.status}>
-						<option value="">{t('common.all')}</option>
-						{#each statuses as s (s)}<option value={s}>{t(`status.${s}`)}</option>{/each}
-					</NativeSelect>
+					<AppSelect
+						id="s-status"
+						name="status"
+						value={data.filters.status}
+						options={[
+							all(t('common.all')),
+							...statuses.map((s) => ({ value: s, label: t(`status.${s}`) }))
+						]}
+					/>
 				</div>
 				<Button type="submit" variant="secondary">{t('common.filter')}</Button>
 			</form>

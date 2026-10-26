@@ -1,25 +1,19 @@
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
-	import CalendarCheck from '@lucide/svelte/icons/calendar-check';
-	import ClipboardCheck from '@lucide/svelte/icons/clipboard-check';
-	import Hourglass from '@lucide/svelte/icons/hourglass';
-	import Inbox from '@lucide/svelte/icons/inbox';
-	import Radio from '@lucide/svelte/icons/radio';
-	import Filter from '@lucide/svelte/icons/filter';
+	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
-	import * as Card from '#lib/components/ui/card/index.js';
 	import * as Table from '#lib/components/ui/table/index.js';
-	import * as Collapsible from '#lib/components/ui/collapsible/index.js';
 	import { Badge } from '#lib/components/ui/badge/index.js';
-	import { Button } from '#lib/components/ui/button/index.js';
-	import { Label } from '#lib/components/ui/label/index.js';
 	import { Progress } from '#lib/components/ui/progress/index.js';
 	import PageHeader from '#lib/components/app/PageHeader.svelte';
 	import StatCard from '#lib/components/app/StatCard.svelte';
-	import NativeSelect from '#lib/components/app/NativeSelect.svelte';
+	import AppSelect from '#lib/components/app/AppSelect.svelte';
+	import { all } from '#lib/options.ts';
 	import { t, locale } from '#lib/i18n/t.svelte.ts';
 	import { formatTime } from '#lib/i18n/index.ts';
 	import { LiveRefresh } from '#lib/realtime.svelte.ts';
+	import { cn } from '#lib/utils.js';
 
 	let { data } = $props();
 
@@ -30,169 +24,151 @@
 	});
 
 	const s = $derived(data.stats);
-	const groups = $derived.by(() => {
-		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- rebuilt on every change, never mutated after
-		const map = new Map<string, { name: string; rows: typeof data.rows }>();
-		for (const r of data.rows) {
-			const g = map.get(r.group_id) ?? { name: r.group_name, rows: [] };
-			g.rows.push(r);
-			map.set(r.group_id, g);
-		}
-		return [...map.entries()];
-	});
-	const filtered = $derived(!!(data.filters.group || data.filters.event || data.filters.judge));
+
+	function setFilter(key: string, value: string) {
+		const u = new URL(page.url.href);
+		if (value) u.searchParams.set(key, value);
+		else u.searchParams.delete(key);
+		if (key === 'group') u.searchParams.delete('event');
+		void goto(u.pathname + u.search, { reset: false, replace: true });
+	}
 </script>
 
 <svelte:head><title>{t('admin.dashboard.title')}</title></svelte:head>
 
-<div class="grid grid-cols-1 gap-6">
+<div class="grid grid-cols-1 gap-8">
 	<PageHeader title={t('admin.dashboard.title')}>
 		{#snippet actions()}
-			<Badge variant={live.live ? 'success' : 'neutral'} class="gap-1.5 text-sm" role="status">
-				<Radio class={live.live ? 'animate-pulse' : ''} />
+			<span class="text-muted-foreground inline-flex items-center gap-2 text-sm" role="status">
+				<span
+					class={cn(
+						'size-2 rounded-full',
+						live.live ? 'bg-success animate-pulse' : 'bg-muted-foreground/40'
+					)}
+				></span>
 				{live.live
 					? t('admin.dashboard.live')
-					: t('admin.dashboard.polling', { s: live.pollSeconds })}
-				· {formatTime(locale(), data.loadedAt)}
-			</Badge>
+					: t('admin.dashboard.polling', { s: live.pollSeconds })} · {formatTime(
+					locale(),
+					data.loadedAt
+				)}
+			</span>
 		{/snippet}
 	</PageHeader>
 
 	<div class="grid grid-cols-2 gap-3 lg:grid-cols-4" data-testid="stats">
-		<StatCard
-			label={t('admin.dashboard.overview_events')}
-			value={s.complete}
-			of={s.events}
-			icon={CalendarCheck}
-		/>
+		<StatCard label={t('admin.dashboard.overview_events')} value={s.complete} of={s.events} />
 		<StatCard
 			label={t('admin.dashboard.overview_submissions')}
 			value={s.submitted}
 			of={s.assigned}
-			icon={ClipboardCheck}
 		/>
-		<StatCard
-			label={t('admin.dashboard.overview_not_started')}
-			value={s.not_started}
-			icon={Hourglass}
-		/>
+		<StatCard label={t('admin.dashboard.overview_not_started')} value={s.not_started} />
 		<StatCard
 			label={t('admin.dashboard.overview_requests')}
 			value={s.reopen + s.corrections}
-			icon={Inbox}
 			href="/admin/requests"
-			tone={s.reopen + s.corrections ? 'warning' : 'default'}
+			highlight={s.reopen + s.corrections > 0}
 		/>
 	</div>
 
-	<Collapsible.Root open={filtered}>
-		<Collapsible.Trigger>
-			{#snippet child({ props })}
-				<Button {...props} variant="outline" size="sm"><Filter />{t('common.filter')}</Button>
-			{/snippet}
-		</Collapsible.Trigger>
-		<Collapsible.Content>
-			<Card.Root class="mt-3">
-				<Card.Content>
-					<form method="GET" class="grid items-end gap-4 sm:grid-cols-2 lg:grid-cols-4">
-						<div class="grid gap-2">
-							<Label for="f-group">{t('common.group')}</Label>
-							<NativeSelect id="f-group" name="group" value={data.filters.group}>
-								<option value="">{t('common.all')}</option>
-								{#each data.groupsOptions as [id, name] (id)}<option value={id}>{name}</option
-									>{/each}
-							</NativeSelect>
-						</div>
-						<div class="grid gap-2">
-							<Label for="f-event">{t('common.event')}</Label>
-							<NativeSelect id="f-event" name="event" value={data.filters.event}>
-								<option value="">{t('common.all')}</option>
-								{#each data.eventOptions as e (e.id)}<option value={e.id}
-										>{e.group} – {e.name}</option
-									>{/each}
-							</NativeSelect>
-						</div>
-						<div class="grid gap-2">
-							<Label for="f-judge">{t('common.judge')}</Label>
-							<NativeSelect id="f-judge" name="judge" value={data.filters.judge}>
-								<option value="">{t('common.all')}</option>
-								{#each data.judges as j (j.id)}<option value={j.id}>{j.display_name}</option>{/each}
-							</NativeSelect>
-						</div>
-						<div class="flex gap-2">
-							<Button type="submit">{t('common.filter')}</Button>
-							{#if filtered}<Button href="/admin" variant="ghost">{t('common.all')}</Button>{/if}
-						</div>
-					</form>
-				</Card.Content>
-			</Card.Root>
-		</Collapsible.Content>
-	</Collapsible.Root>
-
-	{#each groups as [id, g] (id)}
-		<Card.Root class="gap-0 py-0">
-			<Card.Header class="border-b py-4"
-				><Card.Title class="text-lg">{g.name}</Card.Title></Card.Header
-			>
-			<Table.Root>
-				<Table.Body>
-					{#each g.rows as r (r.event_id)}
-						<Table.Row data-testid="event-progress">
-							<Table.Cell class="w-[40%] py-3 whitespace-normal">
-								<a
-									href="/admin/submissions?event={r.event_id}"
-									class="font-semibold hover:underline">{r.event_name}</a
-								>
-								<div class="text-muted-foreground text-sm">
-									{t('admin.dashboard.judges_submitted', { a: r.submitted, b: r.required_judges })}
-								</div>
-							</Table.Cell>
-							<Table.Cell class="hidden w-[20%] sm:table-cell">
-								<Progress value={r.submitted} max={Math.max(1, r.required_judges)} class="h-2" />
-							</Table.Cell>
-							<Table.Cell class="whitespace-normal">
-								<div class="flex flex-wrap gap-1.5">
-									{#if r.finalized}
-										<Badge variant="success">{t('result_status.finalized')}</Badge>
-									{:else if r.required_judges === 0}
-										<Badge variant="destructive">{t('admin.dashboard.no_judges')}</Badge>
-									{:else if r.complete}
-										<Badge variant="info">{t('admin.dashboard.complete')}</Badge>
-									{:else}
-										<Badge variant="neutral"
-											>{t('admin.dashboard.waiting_for', {
-												n: r.required_judges - r.submitted
-											})}</Badge
-										>
-									{/if}
-									{#if r.reopening_pending + r.corrections_open > 0}
-										<Badge variant="warning" href="/admin/requests"
-											>{t('nav.requests')}: {r.reopening_pending + r.corrections_open}</Badge
-										>
-									{/if}
-									{#if r.incomplete_submissions > 0}
-										<Badge variant="destructive"
-											>{t('admin.dashboard.needs_fix', { n: r.incomplete_submissions })}</Badge
-										>
-									{/if}
-								</div>
-							</Table.Cell>
-							<Table.Cell class="w-10 text-right">
-								<Button
-									href={r.complete
-										? `/admin/results/${r.event_id}`
-										: `/admin/submissions?event=${r.event_id}`}
-									variant="ghost"
-									size="icon-sm"
-									aria-label={r.event_name}
-								>
-									<ChevronRight />
-								</Button>
-							</Table.Cell>
-						</Table.Row>
-					{/each}
-				</Table.Body>
-			</Table.Root>
-		</Card.Root>
-	{/each}
+	<section class="bg-card rounded-xl border">
+		<div class="flex flex-wrap items-center justify-between gap-3 border-b p-4">
+			<h2 class="font-semibold">{t('admin.dashboard.events')}</h2>
+			<div class="grid w-full grid-cols-2 gap-2 sm:w-auto sm:min-w-[26rem]">
+				<AppSelect
+					id="f-group"
+					value={data.filters.group}
+					options={[
+						all(t('common.group') + ': ' + t('common.all')),
+						...data.groupsOptions.map(([id, name]) => ({ value: id, label: name }))
+					]}
+					onValueChange={(v) => setFilter('group', v)}
+				/>
+				<AppSelect
+					id="f-judge"
+					value={data.filters.judge}
+					options={[
+						all(t('common.judge') + ': ' + t('common.all')),
+						...data.judges.map((j) => ({ value: j.id, label: j.display_name }))
+					]}
+					onValueChange={(v) => setFilter('judge', v)}
+				/>
+			</div>
+		</div>
+		<Table.Root>
+			<Table.Header>
+				<Table.Row class="hover:bg-transparent">
+					<Table.Head class="pl-4">{t('common.event')}</Table.Head>
+					<Table.Head class="hidden w-48 sm:table-cell">{t('report.judges_submitted')}</Table.Head>
+					<Table.Head>{t('common.status')}</Table.Head>
+					<Table.Head class="w-10"></Table.Head>
+				</Table.Row>
+			</Table.Header>
+			<Table.Body>
+				{#each data.rows as r (r.event_id)}
+					<Table.Row data-testid="event-progress">
+						<Table.Cell class="py-3 pl-4 whitespace-normal">
+							<a href="/admin/events/{r.event_id}" class="font-medium hover:underline"
+								>{r.event_name}</a
+							>
+							<div class="text-muted-foreground text-xs">{r.group_name}</div>
+						</Table.Cell>
+						<Table.Cell class="hidden sm:table-cell">
+							<div class="flex items-center gap-3">
+								<span class="w-10 text-sm tabular-nums">{r.submitted}/{r.required_judges}</span>
+								<Progress
+									value={r.submitted}
+									max={Math.max(1, r.required_judges)}
+									class="h-1.5 flex-1"
+								/>
+							</div>
+						</Table.Cell>
+						<Table.Cell class="whitespace-normal">
+							<div class="flex flex-wrap items-center gap-1.5">
+								{#if r.finalized}
+									<Badge variant="success">{t('result_status.finalized')}</Badge>
+								{:else if r.required_judges === 0}
+									<Badge variant="destructive">{t('admin.dashboard.no_judges')}</Badge>
+								{:else if r.complete}
+									<Badge variant="info">{t('admin.dashboard.complete')}</Badge>
+								{:else}
+									<span class="text-muted-foreground text-sm"
+										>{t('admin.dashboard.waiting_for', {
+											n: r.required_judges - r.submitted
+										})}</span
+									>
+								{/if}
+								{#if r.reopening_pending + r.corrections_open > 0}
+									<Badge variant="warning" href="/admin/requests"
+										>{t('nav.requests')} · {r.reopening_pending + r.corrections_open}</Badge
+									>
+								{/if}
+								{#if r.incomplete_submissions > 0}
+									<Badge variant="destructive"
+										>{t('admin.dashboard.needs_fix', { n: r.incomplete_submissions })}</Badge
+									>
+								{/if}
+							</div>
+						</Table.Cell>
+						<Table.Cell class="pr-3 text-right">
+							<a
+								href={r.complete
+									? `/admin/results/${r.event_id}`
+									: `/admin/submissions?event=${r.event_id}`}
+								class="text-muted-foreground hover:text-foreground hover:bg-accent inline-grid size-8 place-items-center rounded-md"
+								aria-label={r.event_name}><ChevronRight class="size-4" /></a
+							>
+						</Table.Cell>
+					</Table.Row>
+				{:else}
+					<Table.Row
+						><Table.Cell colspan={4} class="text-muted-foreground p-6 text-center"
+							>{t('common.none')}</Table.Cell
+						></Table.Row
+					>
+				{/each}
+			</Table.Body>
+		</Table.Root>
+	</section>
 </div>

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { withProgress } from '#lib/progress.svelte.ts';
 	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
 	import Trophy from '@lucide/svelte/icons/trophy';
 	import Medal from '@lucide/svelte/icons/medal';
@@ -200,7 +201,12 @@
 						</Card.Header>
 						{#if r.status !== 'finalized'}
 							<Card.Content>
-								<form method="POST" action="?/resolveTie" use:enhance class="grid gap-4">
+								<form
+									method="POST"
+									action="?/resolveTie"
+									use:enhance={withProgress()}
+									class="grid gap-4"
+								>
 									<div class="grid gap-3 sm:grid-cols-2">
 										{#each tie.participant_ids as pid (pid)}
 											<div class="grid gap-2">

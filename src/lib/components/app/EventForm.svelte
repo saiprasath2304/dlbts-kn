@@ -3,7 +3,8 @@
 	import { Label } from '#lib/components/ui/label/index.js';
 	import { Textarea } from '#lib/components/ui/textarea/index.js';
 	import { Switch } from '#lib/components/ui/switch/index.js';
-	import NativeSelect from './NativeSelect.svelte';
+	import AppSelect from './AppSelect.svelte';
+	import { groupOptions } from '#lib/options.ts';
 	import { t } from '#lib/i18n/t.svelte.ts';
 
 	type Ev = {
@@ -34,14 +35,12 @@
 	</div>
 	<div class="grid gap-2">
 		<Label for="e-group-{sfx}">{t('common.group')}</Label>
-		<NativeSelect
+		<AppSelect
 			id="e-group-{sfx}"
 			name="group_id"
 			value={event?.group_id ?? groupId ?? groups[0]?.id}
-			required
-		>
-			{#each groups as g (g.id)}<option value={g.id}>{g.name}</option>{/each}
-		</NativeSelect>
+			options={groupOptions(groups)}
+		/>
 	</div>
 	<div class="grid gap-2">
 		<Label for="e-code-{sfx}">{t('common.code')}</Label>
@@ -56,15 +55,15 @@
 	</div>
 	<div class="grid gap-2">
 		<Label for="e-prec-{sfx}">{t('admin.events.precision')}</Label>
-		<NativeSelect
+		<AppSelect
 			id="e-prec-{sfx}"
 			name="score_precision"
 			value={String(event?.score_precision ?? 1)}
-		>
-			<option value="0">{t('admin.events.precision_0')}</option>
-			<option value="1">{t('admin.events.precision_1')}</option>
-			<option value="2">{t('admin.events.precision_2')}</option>
-		</NativeSelect>
+			options={[0, 1, 2].map((n) => ({
+				value: String(n),
+				label: t(`admin.events.precision_${n}`)
+			}))}
+		/>
 	</div>
 	<div class="grid gap-2">
 		<Label for="e-order-{sfx}">{t('common.order')}</Label>

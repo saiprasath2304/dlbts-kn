@@ -26,15 +26,19 @@
 
 <Sidebar.Provider>
 	<AdminSidebar pendingRequests={data.pendingRequests} />
-	<Sidebar.Inset class="bg-background">
+	<Sidebar.Inset>
 		<header
-			class="bg-background/90 sticky top-0 z-20 flex h-14 items-center gap-3 border-b px-4 backdrop-blur"
+			class="bg-background/80 sticky top-0 z-20 flex h-13 items-center gap-2 border-b px-3 backdrop-blur md:px-4"
 		>
 			<MenuTrigger />
-			<Separator orientation="vertical" class="h-6" />
-			<span class="text-muted-foreground font-medium">{t(section)}</span>
+			<Separator orientation="vertical" class="mx-1 h-5" />
+			<span class="text-sm font-medium">{t(section)}</span>
 		</header>
-		<main id="main" tabindex="-1" class="mx-auto w-full max-w-6xl min-w-0 p-4 outline-none md:p-6">
+		<main
+			id="main"
+			tabindex="-1"
+			class="mx-auto w-full max-w-6xl min-w-0 px-4 py-6 outline-none md:px-8 md:py-8"
+		>
 			{@render children()}
 		</main>
 	</Sidebar.Inset>

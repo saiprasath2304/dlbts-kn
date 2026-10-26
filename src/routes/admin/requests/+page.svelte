@@ -35,7 +35,7 @@
 	<FormFeedback {form} />
 
 	<Tabs.Root value="reopen">
-		<Tabs.List class="h-auto flex-wrap">
+		<Tabs.List variant="line" class="h-auto flex-wrap">
 			<Tabs.Trigger value="reopen" class="px-4 py-2"
 				>{t('admin.requests.reopening')}<Badge
 					variant={pendingReopen.length ? 'warning' : 'neutral'}

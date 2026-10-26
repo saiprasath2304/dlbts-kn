@@ -8,7 +8,8 @@
 	import { Input } from '#lib/components/ui/input/index.js';
 	import { Label } from '#lib/components/ui/label/index.js';
 	import PageHeader from '#lib/components/app/PageHeader.svelte';
-	import NativeSelect from '#lib/components/app/NativeSelect.svelte';
+	import AppSelect from '#lib/components/app/AppSelect.svelte';
+	import { eventOptions, all } from '#lib/options.ts';
 	import { t, locale } from '#lib/i18n/t.svelte.ts';
 	import { formatDateTime } from '#lib/i18n/index.ts';
 
@@ -51,21 +52,27 @@
 				</div>
 				<div class="grid gap-2">
 					<Label for="a-actor">{t('admin.audit.actor')}</Label>
-					<NativeSelect id="a-actor" name="actor" value={data.filters.actor}>
-						<option value="">{t('common.all')}</option>
-						{#each data.people as p (p.id)}<option value={p.id}
-								>{p.display_name} ({p.username})</option
-							>{/each}
-					</NativeSelect>
+					<AppSelect
+						id="a-actor"
+						name="actor"
+						value={data.filters.actor}
+						options={[
+							all(t('common.all')),
+							...data.people.map((p) => ({
+								value: p.id,
+								label: `${p.display_name} (${p.username})`
+							}))
+						]}
+					/>
 				</div>
 				<div class="grid gap-2">
 					<Label for="a-event">{t('common.event')}</Label>
-					<NativeSelect id="a-event" name="event" value={data.filters.event}>
-						<option value="">{t('common.all')}</option>
-						{#each data.groups as g (g.id)}<optgroup label={g.name}
-								>{#each g.events as e (e.id)}<option value={e.id}>{e.name}</option>{/each}</optgroup
-							>{/each}
-					</NativeSelect>
+					<AppSelect
+						id="a-event"
+						name="event"
+						value={data.filters.event}
+						options={[all(t('common.all')), ...eventOptions(data.groups)]}
+					/>
 				</div>
 				<div class="grid gap-2">
 					<Label for="a-part">{t('common.participant')} ({t('common.code')})</Label><Input
@@ -76,10 +83,12 @@
 				</div>
 				<div class="grid gap-2">
 					<Label for="a-action">{t('admin.audit.action')}</Label>
-					<NativeSelect id="a-action" name="action" value={data.filters.action}>
-						<option value="">{t('common.all')}</option>
-						{#each data.actions as a (a)}<option value={a}>{a}</option>{/each}
-					</NativeSelect>
+					<AppSelect
+						id="a-action"
+						name="action"
+						value={data.filters.action}
+						options={[all(t('common.all')), ...data.actions.map((a) => ({ value: a, label: a }))]}
+					/>
 				</div>
 				<div><Button type="submit" variant="secondary">{t('common.filter')}</Button></div>
 			</form>

@@ -10,6 +10,8 @@
 	} from '#lib/components/ui/button/index.js';
 	import { Label } from '#lib/components/ui/label/index.js';
 	import { Textarea } from '#lib/components/ui/textarea/index.js';
+	import Loader from '@lucide/svelte/icons/loader-circle';
+	import { progress } from '#lib/progress.svelte.ts';
 	import { t } from '#lib/i18n/t.svelte.ts';
 
 	let {
@@ -54,8 +56,10 @@
 			class="grid gap-4"
 			use:enhance={() => {
 				busy = true;
+				progress.forms++;
 				return async ({ update }) => {
 					busy = false;
+					progress.forms--;
 					open = false;
 					await update();
 				};
@@ -85,6 +89,7 @@
 					>{t('common.cancel')}</Button
 				>
 				<Button type="submit" variant={danger ? 'solidDestructive' : 'default'} disabled={busy}>
+					{#if busy}<Loader class="animate-spin" />{/if}
 					{confirmLabel ?? t('common.confirm')}
 				</Button>
 			</Dialog.Footer>

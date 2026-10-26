@@ -7,8 +7,6 @@
 	const sidebar = Sidebar.useSidebar();
 </script>
 
-<!-- Visible text label on phones: easier than an icon-only control. -->
-<Button variant="outline" size="sm" onclick={() => sidebar.toggle()} aria-label={t('nav.menu')}>
+<Button variant="ghost" size="icon-sm" onclick={() => sidebar.toggle()} aria-label={t('nav.menu')}>
 	<PanelLeft />
-	<span class="md:sr-only">{t('nav.menu')}</span>
 </Button>

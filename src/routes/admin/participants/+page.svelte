@@ -17,7 +17,8 @@
 	import FormDialog from '#lib/components/app/FormDialog.svelte';
 	import ConfirmForm from '#lib/components/app/ConfirmForm.svelte';
 	import ParticipantForm from '#lib/components/app/ParticipantForm.svelte';
-	import NativeSelect from '#lib/components/app/NativeSelect.svelte';
+	import AppSelect from '#lib/components/app/AppSelect.svelte';
+	import { groupOptions, eventOptions, all } from '#lib/options.ts';
 	import { t } from '#lib/i18n/t.svelte.ts';
 
 	let { data, form } = $props();
@@ -84,17 +85,21 @@
 				</div>
 				<div class="grid gap-2">
 					<Label for="f-group">{t('common.group')}</Label>
-					<NativeSelect id="f-group" name="group" value={data.filters.group}>
-						<option value="">{t('common.all')}</option>
-						{#each data.groups as g (g.id)}<option value={g.id}>{g.name}</option>{/each}
-					</NativeSelect>
+					<AppSelect
+						id="f-group"
+						name="group"
+						value={data.filters.group}
+						options={[all(t('common.all')), ...groupOptions(data.groups)]}
+					/>
 				</div>
 				<div class="grid gap-2">
 					<Label for="f-event">{t('common.event')}</Label>
-					<NativeSelect id="f-event" name="event" value={data.filters.event}>
-						<option value="">{t('common.all')}</option>
-						{#each allEvents as e (e.id)}<option value={e.id}>{e.group} – {e.name}</option>{/each}
-					</NativeSelect>
+					<AppSelect
+						id="f-event"
+						name="event"
+						value={data.filters.event}
+						options={[all(t('common.all')), ...eventOptions(data.groups)]}
+					/>
 				</div>
 				<div class="flex h-11 items-center gap-2">
 					<Checkbox id="f-inactive" name="inactive" value="1" bind:checked={inactive} />

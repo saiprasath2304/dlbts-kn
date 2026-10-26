@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
 	import { enhance } from '$app/forms';
+	import { withProgress } from '#lib/progress.svelte.ts';
 	import { beforeNavigate, invalidateAll } from '$app/navigation';
 	import ArrowRight from '@lucide/svelte/icons/arrow-right';
 	import BellRing from '@lucide/svelte/icons/bell-ring';
@@ -238,7 +239,12 @@
 						{c.judge_response}
 					</p>
 				{/if}
-				<form method="POST" action="?/respondCorrection" use:enhance class="mt-2 grid w-full gap-2">
+				<form
+					method="POST"
+					action="?/respondCorrection"
+					use:enhance={withProgress()}
+					class="mt-2 grid w-full gap-2"
+				>
 					<input type="hidden" name="request_id" value={c.id} />
 					<Label for="resp-{c.id}">{t('request.respond')}</Label>
 					<Textarea
@@ -358,7 +364,7 @@
 		<Alert.Root variant="info"><Alert.Title>{t('score.no_participants')}</Alert.Title></Alert.Root>
 	{:else}
 		{#if editable}
-			<div class="bg-background/95 sticky top-0 z-20 -mx-1 px-1 py-1 backdrop-blur sm:top-[61px]">
+			<div class="bg-background/95 sticky top-14 z-20 -mx-1 px-1 py-1 backdrop-blur">
 				<SaveIndicator
 					state={sync.state}
 					lastSavedAt={sync.lastSavedAt}

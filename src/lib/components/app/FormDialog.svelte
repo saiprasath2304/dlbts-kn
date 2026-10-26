@@ -10,6 +10,8 @@
 		type ButtonVariant,
 		type ButtonSize
 	} from '#lib/components/ui/button/index.js';
+	import Loader from '@lucide/svelte/icons/loader-circle';
+	import { progress } from '#lib/progress.svelte.ts';
 	import { t } from '#lib/i18n/t.svelte.ts';
 
 	let {
@@ -54,8 +56,10 @@
 			class="grid gap-5"
 			use:enhance={() => {
 				busy = true;
+				progress.forms++;
 				return async ({ result, update }) => {
 					busy = false;
+					progress.forms--;
 					if (result.type === 'success' || result.type === 'redirect') open = false;
 					await update();
 				};
@@ -71,7 +75,9 @@
 				<Button type="button" variant="outline" onclick={() => (open = false)}
 					>{t('common.cancel')}</Button
 				>
-				<Button type="submit" disabled={busy}>{submitLabel ?? t('common.save')}</Button>
+				<Button type="submit" disabled={busy}
+					>{#if busy}<Loader class="animate-spin" />{/if}{submitLabel ?? t('common.save')}</Button
+				>
 			</Dialog.Footer>
 		</form>
 	</Dialog.Content>

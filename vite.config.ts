@@ -6,7 +6,14 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import tailwindcss from '@tailwindcss/vite';
 
 // Vercel sets VERCEL=1 during its builds; everywhere else we build a Node server.
-const adapter = process.env.VERCEL ? adapterVercel({ runtime: 'nodejs22.x' }) : adapterNode();
+// Run Vercel functions next to the database: the Supabase project is in Mumbai (ap-south-1),
+// so bom1 avoids a round trip to the US on every request. Override with VERCEL_FUNCTION_REGION.
+const adapter = process.env.VERCEL
+	? adapterVercel({
+			runtime: 'nodejs22.x',
+			regions: [process.env.VERCEL_FUNCTION_REGION || 'bom1']
+		})
+	: adapterNode();
 
 export default defineConfig(({ mode }) => {
 	// Public URL of a Node deployment, e.g. https://judging.example.org (build time).

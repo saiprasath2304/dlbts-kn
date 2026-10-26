@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { Input } from '#lib/components/ui/input/index.js';
 	import { Label } from '#lib/components/ui/label/index.js';
-	import NativeSelect from './NativeSelect.svelte';
+	import AppSelect from './AppSelect.svelte';
+	import { groupOptions, all } from '#lib/options.ts';
 	import { t } from '#lib/i18n/t.svelte.ts';
 
 	type P = {
@@ -47,21 +48,24 @@
 	</div>
 	<div class="grid gap-2">
 		<Label for="p-kind-{sfx}">{t('admin.participants.kind')}</Label>
-		<NativeSelect id="p-kind-{sfx}" name="kind" value={participant?.kind ?? 'individual'}>
-			<option value="individual">{t('admin.participants.kind_individual')}</option>
-			<option value="team">{t('admin.participants.kind_team')}</option>
-		</NativeSelect>
+		<AppSelect
+			id="p-kind-{sfx}"
+			name="kind"
+			value={participant?.kind ?? 'individual'}
+			options={[
+				{ value: 'individual', label: t('admin.participants.kind_individual') },
+				{ value: 'team', label: t('admin.participants.kind_team') }
+			]}
+		/>
 	</div>
 	<div class="grid gap-2">
 		<Label for="p-group-{sfx}">{t('common.group')}</Label>
-		<NativeSelect
+		<AppSelect
 			id="p-group-{sfx}"
 			name="group_id"
 			value={participant?.group_id ?? groups[0]?.id}
-			required
-		>
-			{#each groups as g (g.id)}<option value={g.id}>{g.name}</option>{/each}
-		</NativeSelect>
+			options={groupOptions(groups)}
+		/>
 	</div>
 	<div class="grid gap-2">
 		<Label for="p-aff-{sfx}">{t('admin.participants.affiliation')}</Label>
@@ -80,10 +84,15 @@
 			<Label for="p-event-new"
 				>{t('admin.participants.add_to_event')} ({t('common.optional')})</Label
 			>
-			<NativeSelect id="p-event-new" name="event_id">
-				<option value="">{t('common.none')}</option>
-				{#each events as e (e.id)}<option value={e.id}>{e.group} – {e.name}</option>{/each}
-			</NativeSelect>
+			<AppSelect
+				id="p-event-new"
+				name="event_id"
+				value=""
+				options={[
+					all(t('common.none')),
+					...events.map((e) => ({ value: e.id, label: e.name, group: e.group }))
+				]}
+			/>
 		</div>
 	{/if}
 </div>

@@ -18,7 +18,7 @@
 	import EventForm from '#lib/components/app/EventForm.svelte';
 	import CriterionForm from '#lib/components/app/CriterionForm.svelte';
 	import ReasonField from '#lib/components/app/ReasonField.svelte';
-	import NativeSelect from '#lib/components/app/NativeSelect.svelte';
+	import AppSelect from '#lib/components/app/AppSelect.svelte';
 	import { t } from '#lib/i18n/t.svelte.ts';
 	import { formatMark } from '#lib/scoring.ts';
 
@@ -54,7 +54,7 @@
 	<FormFeedback {form} />
 
 	<Tabs.Root value="criteria">
-		<Tabs.List class="h-auto flex-wrap">
+		<Tabs.List variant="line" class="h-auto flex-wrap">
 			<Tabs.Trigger value="criteria" class="px-4 py-2"
 				>{t('admin.events.tab_criteria')}
 				<Badge variant="neutral" class="ml-1.5">{data.criteria.length}</Badge></Tabs.Trigger
@@ -140,13 +140,15 @@
 							<input type="hidden" name="active" value="true" />
 							<div class="grid gap-2">
 								<Label for="add-judge">{t('admin.assignments.select_judge')}</Label>
-								<NativeSelect id="add-judge" name="judge_id" required>
-									{#each freeJudges as j (j.id)}<option value={j.id}
-											>{j.display_name} ({j.username}){j.is_active
-												? ''
-												: ' – ' + t('common.inactive')}</option
-										>{/each}
-								</NativeSelect>
+								<AppSelect
+									id="add-judge"
+									name="judge_id"
+									value={freeJudges[0]?.id ?? ''}
+									options={freeJudges.map((j) => ({
+										value: j.id,
+										label: `${j.display_name} (${j.username})${j.is_active ? '' : ' – ' + t('common.inactive')}`
+									}))}
+								/>
 							</div>
 							<ReasonField show={data.scoringStarted} id="aj-reason" />
 						</FormDialog>
@@ -219,11 +221,15 @@
 								<input type="hidden" name="active" value="true" />
 								<div class="grid gap-2">
 									<Label for="add-part">{t('common.participant')}</Label>
-									<NativeSelect id="add-part" name="participant_id" required>
-										{#each data.available as p (p.id)}<option value={p.id}
-												>{p.code} – {p.name}</option
-											>{/each}
-									</NativeSelect>
+									<AppSelect
+										id="add-part"
+										name="participant_id"
+										value={data.available[0]?.id ?? ''}
+										options={data.available.map((p) => ({
+											value: p.id,
+											label: `${p.code} – ${p.name}`
+										}))}
+									/>
 								</div>
 								<ReasonField show={data.scoringStarted} id="ap-reason" />
 							</FormDialog>
