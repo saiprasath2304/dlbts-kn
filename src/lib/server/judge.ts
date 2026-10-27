@@ -28,7 +28,8 @@ export async function loadJudgeEvent(locals: App.Locals, eventId: string) {
 			.order('name'),
 		db
 			.from('event_participants')
-			.select('display_order, participants(id, code, name, kind, affiliation, members)')
+			// Judges never receive names, Samithi or team member names: only code, reg. no and DOB.
+			.select('display_order, participants(id, code, kind, registration_no, dob, dob_verified)')
 			.eq('event_id', eventId)
 			.eq('is_active', true),
 		db
@@ -41,7 +42,7 @@ export async function loadJudgeEvent(locals: App.Locals, eventId: string) {
 	if (!eventRes.data || !submissionRes.data) error(404, { message: 'Not found' });
 
 	const submission = submissionRes.data as typeof submissionRes.data & { status: SubmissionStatus };
-	const [scoresRes, correctionsRes, reopeningsRes, remarksRes, contextRes, preqRes] =
+	const [scoresRes, correctionsRes, reopeningsRes, remarksRes, contextRes, preqRes, openRes] =
 		await Promise.all([
 			db
 				.from('criterion_scores')
@@ -71,12 +72,18 @@ export async function loadJudgeEvent(locals: App.Locals, eventId: string) {
 				)
 				.eq('event_id', eventId)
 				.eq('requested_by', judgeId)
-				.order('created_at', { ascending: false })
+				.order('created_at', { ascending: false }),
+			db.rpc('scoring_is_open')
 		]);
 
 	const participants = (entriesRes.data ?? [])
 		.filter((e) => e.participants)
-		.map((e) => ({ ...e.participants!, display_order: e.display_order }))
+		.map((e) => ({
+			...e.participants!,
+			/** What judges see in place of a name. */
+			label: e.participants!.registration_no || e.participants!.code,
+			display_order: e.display_order
+		}))
 		.sort((a, b) => a.display_order - b.display_order || a.code.localeCompare(b.code));
 
 	const criteria = (criteriaRes.data ?? []).map((c) => ({ ...c, max_marks: Number(c.max_marks) }));
@@ -106,17 +113,20 @@ export async function loadJudgeEvent(locals: App.Locals, eventId: string) {
 						group: string;
 						venue: string | null;
 					}[],
-					memento: { given: c.memento_given, at: c.memento_given_at, by: c.memento_given_by_name }
+					memento: { given: c.memento_given, at: c.memento_given_at, by: c.memento_given_by_name },
+					dob: { verified: c.dob_verified, at: c.dob_verified_at, by: c.dob_verified_by_name }
 				}
 			])
 		) as Record<string, ParticipantContext>,
-		participantRequests: preqRes.data ?? []
+		participantRequests: preqRes.data ?? [],
+		scoringOpen: openRes.data === true
 	};
 }
 
 export interface ParticipantContext {
 	other_events: { event_id: string; name: string; group: string; venue: string | null }[];
 	memento: { given: boolean; at: string | null; by: string | null };
+	dob: { verified: boolean; at: string | null; by: string | null };
 }
 
 export type JudgeEventData = Awaited<ReturnType<typeof loadJudgeEvent>>;

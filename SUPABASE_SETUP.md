@@ -109,9 +109,10 @@ variables, never in code, chat messages or screenshots.
 If you set up the project before an update, run its file in **SQL Editor → New query → Run**.
 Each update is safe to run again. A brand-new project only needs 01 and 02 (01 already contains every update).
 
-| Date       | File                                                     | Adds                                                                                                                                                 |
-| ---------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-10-26 | `supabase/setup/03_update_2026-10-26_judge_features.sql` | Room/venue for events, team members, memento tick, judge remarks and feedback reports, judge → admin participant requests, tie alerts during judging |
+| Date       | File                                                           | Adds                                                                                                                                                 |
+| ---------- | -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-10-26 | `supabase/setup/03_update_2026-10-26_judge_features.sql`       | Room/venue for events, team members, memento tick, judge remarks and feedback reports, judge → admin participant requests, tie alerts during judging |
+| 2026-10-27 | `supabase/setup/04_update_2026-10-27_dob_lock_event_types.sql` | Date of birth + DOB verified, individual / team event type, common marking lock (starts locked: open it on the admin Dashboard)                      |
 
 Run the update **before** pushing the matching app version to GitHub, otherwise the new pages will show errors until it is run.
 

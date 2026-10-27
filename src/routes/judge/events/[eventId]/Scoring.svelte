@@ -4,15 +4,18 @@
 	import { withProgress } from '#lib/progress.svelte.ts';
 	import { beforeNavigate, invalidateAll } from '$app/navigation';
 	import ArrowRight from '@lucide/svelte/icons/arrow-right';
+	import BadgeCheck from '@lucide/svelte/icons/badge-check';
 	import BellRing from '@lucide/svelte/icons/bell-ring';
 	import CircleCheck from '@lucide/svelte/icons/circle-check';
 	import Clock from '@lucide/svelte/icons/clock';
+	import Eye from '@lucide/svelte/icons/eye';
 	import Gift from '@lucide/svelte/icons/gift';
 	import History from '@lucide/svelte/icons/history';
 	import Info from '@lucide/svelte/icons/info';
 	import Lock from '@lucide/svelte/icons/lock';
 	import MapPin from '@lucide/svelte/icons/map-pin';
 	import Pencil from '@lucide/svelte/icons/pencil';
+	import Plus from '@lucide/svelte/icons/plus';
 	import Scale from '@lucide/svelte/icons/scale';
 	import Search from '@lucide/svelte/icons/search';
 	import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
@@ -21,6 +24,7 @@
 	import * as Alert from '#lib/components/ui/alert/index.js';
 	import * as Card from '#lib/components/ui/card/index.js';
 	import * as Collapsible from '#lib/components/ui/collapsible/index.js';
+	import * as Dialog from '#lib/components/ui/dialog/index.js';
 	import * as Tabs from '#lib/components/ui/tabs/index.js';
 	import { Badge } from '#lib/components/ui/badge/index.js';
 	import { Button } from '#lib/components/ui/button/index.js';
@@ -35,7 +39,7 @@
 	import FormDialog from '#lib/components/app/FormDialog.svelte';
 	import AppSelect from '#lib/components/app/AppSelect.svelte';
 	import { t, locale } from '#lib/i18n/t.svelte.ts';
-	import { formatDateTime } from '#lib/i18n/index.ts';
+	import { formatDateTime, formatDob } from '#lib/i18n/index.ts';
 	import { formatMark, parseMark, participantTotal, type MarkError } from '#lib/scoring.ts';
 	import { isEditable, isSubmitted } from '#lib/status.ts';
 	import { ScoreSync, type Conflict } from '#lib/offline/score-sync.svelte.ts';
@@ -55,7 +59,9 @@
 		scores: data.scores,
 		lastSavedAt: data.submission.last_saved_at,
 		remarks: data.remarks,
-		memento: Object.fromEntries(Object.entries(data.context).map(([id, c]) => [id, c.memento]))
+		memento: Object.fromEntries(Object.entries(data.context).map(([id, c]) => [id, c.memento])),
+		dob: Object.fromEntries(Object.entries(data.context).map(([id, c]) => [id, c.dob])),
+		scoringOpen: data.scoringOpen
 	}));
 	const precision = initial.precision;
 	const sync = new ScoreSync(
@@ -77,8 +83,6 @@
 	let query = $state('');
 	let filter = $state<'all' | 'pending' | 'done'>('all');
 	let busy = $state(false);
-	/** Cards the judge opened for editing (evaluated cards are collapsed otherwise). */
-	let editing = $state<Record<string, boolean>>({});
 
 	// A first autosave moves not_started -> in_progress; otherwise trust the server.
 	const status = $derived(
@@ -87,6 +91,9 @@
 			: data.submission.status) as SubmissionStatus
 	);
 	const editable = $derived(isEditable(status));
+	/** The organisers' common lock: nobody can enter marks until it is opened. */
+	let scoringOpen = $state(initial.scoringOpen);
+	const canEdit = $derived(editable && scoringOpen);
 	const criteriaMax = $derived(data.criteria.reduce((s, c) => s + c.max_marks, 0));
 
 	function marksFor(participantId: string) {
@@ -106,12 +113,24 @@
 	const visible = $derived(
 		data.participants.filter((p) => {
 			const q = query.trim().toLowerCase();
-			if (q && !`${p.name} ${p.code} ${p.members ?? ''}`.toLowerCase().includes(q)) return false;
+			if (q && !`${p.code} ${p.registration_no ?? ''}`.toLowerCase().includes(q)) return false;
 			if (filter === 'pending') return !totals[p.id].complete;
 			if (filter === 'done') return totals[p.id].complete;
 			return true;
 		})
 	);
+
+	// ---------------------------------------------------------------- marks dialog
+	let dialogOpen = $state(false);
+	let currentId = $state<string | null>(null);
+	const current = $derived(data.participants.find((p) => p.id === currentId) ?? null);
+	function openMarks(pid: string) {
+		currentId = pid;
+		dialogOpen = true;
+	}
+	$effect(() => {
+		if (!dialogOpen) void sync.flush();
+	});
 
 	// ---------------------------------------------------------------- remarks
 	const REMARK_KEY = (pid: string) => `remark|${initial.submissionId}|${pid}`;
@@ -163,12 +182,13 @@
 		remarkTimers[pid] = setTimeout(() => saveRemark(pid), 1200);
 	}
 
-	// ---------------------------------------------------------------- memento
+	// ---------------------------------------------------------------- memento & DOB
 	let memento = $state(initial.memento);
-	let mementoBusy = $state<Record<string, boolean>>({});
+	let dob = $state(initial.dob);
+	let flagBusy = $state<Record<string, boolean>>({});
 
 	async function toggleMemento(pid: string, given: boolean) {
-		mementoBusy[pid] = true;
+		flagBusy[`m${pid}`] = true;
 		try {
 			const res = await fetch('/api/judge/memento', {
 				method: 'POST',
@@ -177,11 +197,25 @@
 			});
 			if (res.ok) memento[pid] = await res.json();
 		} finally {
-			mementoBusy[pid] = false;
+			flagBusy[`m${pid}`] = false;
 		}
 	}
 
-	// ---------------------------------------------------------------- tie alerts
+	async function toggleDob(pid: string, verified: boolean) {
+		flagBusy[`d${pid}`] = true;
+		try {
+			const res = await fetch('/api/judge/dob', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ participant_id: pid, verified })
+			});
+			if (res.ok) dob[pid] = await res.json();
+		} finally {
+			flagBusy[`d${pid}`] = false;
+		}
+	}
+
+	// ---------------------------------------------------------------- tie alerts & lock status
 	type Tie = {
 		place: number;
 		participants: { participant_id: string; name: string; code: string }[];
@@ -202,6 +236,19 @@
 		tieTimer = setTimeout(loadTies, 1500);
 	});
 
+	async function loadStatus() {
+		try {
+			const res = await fetch('/api/judge/status');
+			if (res.ok) {
+				const opened = (await res.json()).scoringOpen === true;
+				if (opened && !scoringOpen) void sync.flush();
+				scoringOpen = opened;
+			}
+		} catch {
+			/* offline: keep the last known state */
+		}
+	}
+
 	onMount(() => {
 		let alive = true;
 		sync.init().then((overlay) => {
@@ -220,14 +267,16 @@
 				/* storage unavailable */
 			}
 		}
-		const poll = setInterval(loadTies, 45_000);
+		const tiePoll = setInterval(loadTies, 45_000);
+		const statusPoll = setInterval(loadStatus, 20_000);
 		const warn = (e: BeforeUnloadEvent) => {
 			if (sync.pending > 0 || Object.values(remarkState).includes('saving')) e.preventDefault();
 		};
 		window.addEventListener('beforeunload', warn);
 		return () => {
 			alive = false;
-			clearInterval(poll);
+			clearInterval(tiePoll);
+			clearInterval(statusPoll);
 			clearTimeout(tieTimer);
 			window.removeEventListener('beforeunload', warn);
 			void sync.flush();
@@ -242,7 +291,6 @@
 	function onInput(participantId: string, criterionId: string, max: number, text: string) {
 		const k = key(participantId, criterionId);
 		inputs[k] = text;
-		editing[participantId] = true;
 		const r = parseMark(text, max, precision);
 		if (!r.ok) {
 			errors[k] = r.error;
@@ -263,7 +311,8 @@
 		e.preventDefault();
 		const all = [...document.querySelectorAll<HTMLInputElement>('input[data-score]')];
 		const i = all.indexOf(e.currentTarget as HTMLInputElement);
-		all[i + 1]?.focus();
+		if (all[i + 1]) all[i + 1].focus();
+		else document.getElementById(`r-${currentId}`)?.focus();
 	}
 
 	function errorText(code: MarkError, max: number) {
@@ -281,16 +330,8 @@
 		errors[key(c.participant_id, c.criterion_id)] = null;
 	}
 
-	function goTo(pid: string) {
-		filter = 'all';
-		query = '';
-		editing[pid] = true;
-		requestAnimationFrame(() =>
-			document.getElementById(`p-${pid}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-		);
-	}
-
-	const nameOf = (id: string) => data.participants.find((p) => p.id === id)?.name ?? id;
+	/** Judges only ever see the registration number (or code), never a name. */
+	const labelOf = (id: string | null) => data.participants.find((p) => p.id === id)?.label ?? '';
 	const criterionName = (id: string) => data.criteria.find((c) => c.id === id)?.name ?? id;
 	const shown = (v: number | null) => (v === null ? t('save.empty') : formatMark(v, precision));
 	const openCorrections = $derived(
@@ -325,11 +366,18 @@
 
 	<FormFeedback {form} />
 
+	{#if editable && !scoringOpen}
+		<Alert.Root variant="warning" role="status" data-testid="scoring-locked">
+			<Lock />
+			<Alert.Title>{t('lock.title_locked')}</Alert.Title>
+			<Alert.Description>{t('lock.body_locked')}</Alert.Description>
+		</Alert.Root>
+	{/if}
+
 	{#if sync.recovered > 0}
-		<Alert.Root variant="info" role="status"
-			><History /><Alert.Title>{t('save.recovered', { n: sync.recovered })}</Alert.Title
-			></Alert.Root
-		>
+		<Alert.Root variant="info" role="status">
+			<History /><Alert.Title>{t('save.recovered', { n: sync.recovered })}</Alert.Title>
+		</Alert.Root>
 	{/if}
 
 	{#each ties as tie (tie.place + tie.participants.map((p) => p.participant_id).join())}
@@ -340,14 +388,14 @@
 				<p>
 					{t('ties.body', {
 						place: tie.place,
-						names: tie.participants.map((p) => p.name).join(', ')
+						names: tie.participants.map((p) => labelOf(p.participant_id) || p.code).join(', ')
 					})}
 				</p>
 				<div class="mt-2 flex flex-wrap gap-2">
 					{#each tie.participants as p (p.participant_id)}
-						<Button size="sm" variant="outline" onclick={() => goTo(p.participant_id)}
-							>{p.name}</Button
-						>
+						<Button size="sm" variant="outline" onclick={() => openMarks(p.participant_id)}>
+							{labelOf(p.participant_id) || p.code}
+						</Button>
 					{/each}
 				</div>
 			</Alert.Description>
@@ -361,7 +409,7 @@
 			<Alert.Description>
 				<p>
 					{t('save.conflict_body', {
-						participant: nameOf(c.participant_id),
+						participant: labelOf(c.participant_id),
 						criterion: criterionName(c.criterion_id),
 						mine: shown(c.mine),
 						theirs: shown(c.theirs),
@@ -372,9 +420,9 @@
 					<Button onclick={() => resolve(c, 'mine')}
 						>{t('save.keep_mine', { value: shown(c.mine) })}</Button
 					>
-					<Button variant="outline" onclick={() => resolve(c, 'server')}
-						>{t('save.keep_server', { value: shown(c.theirs) })}</Button
-					>
+					<Button variant="outline" onclick={() => resolve(c, 'server')}>
+						{t('save.keep_server', { value: shown(c.theirs) })}
+					</Button>
 				</div>
 			</Alert.Description>
 		</Alert.Root>
@@ -389,7 +437,7 @@
 				{#if c.participant_id || c.criterion_ids.length}
 					<p class="text-sm">
 						{t('request.correction_scope', {
-							participant: c.participant_id ? nameOf(c.participant_id) : t('common.all'),
+							participant: c.participant_id ? labelOf(c.participant_id) : t('common.all'),
 							criteria: c.criterion_ids.length
 								? c.criterion_ids.map(criterionName).join(', ')
 								: t('common.all')
@@ -428,12 +476,12 @@
 			<Collapsible.Trigger
 				class="flex w-full items-center justify-between gap-3 px-5 py-4 text-left font-semibold"
 			>
-				<span class="inline-flex items-center gap-2"
-					><Info class="text-primary size-5" />{t('judge.about_event')}</span
-				>
-				<span class="text-muted-foreground text-sm font-normal"
-					>{t('judge.total_max', { max: formatMark(criteriaMax) })}</span
-				>
+				<span class="inline-flex items-center gap-2">
+					<Info class="text-primary size-5" />{t('judge.about_event')}
+				</span>
+				<span class="text-muted-foreground text-sm font-normal">
+					{t('judge.total_max', { max: formatMark(criteriaMax) })}
+				</span>
 			</Collapsible.Trigger>
 			<Collapsible.Content>
 				<div class="grid gap-3 border-t px-5 py-4">
@@ -446,11 +494,11 @@
 					<ul class="divide-y rounded-lg border">
 						{#each data.criteria as c (c.id)}
 							<li class="flex items-center justify-between gap-3 px-3 py-2">
-								<span
-									>{c.name}{#if c.description}<span class="text-muted-foreground text-sm"
+								<span>
+									{c.name}{#if c.description}<span class="text-muted-foreground text-sm"
 											>&nbsp;– {c.description}</span
-										>{/if}</span
-								>
+										>{/if}
+								</span>
 								<Badge variant="secondary" class="text-sm">{formatMark(c.max_marks)}</Badge>
 							</li>
 						{/each}
@@ -463,9 +511,9 @@
 	{#if !editable}
 		<Card.Root data-testid="locked-notice" class="border-primary/30">
 			<Card.Header>
-				<Card.Title class="flex items-center gap-2 text-lg"
-					><Lock class="text-primary size-5" />{t('score.locked')}</Card.Title
-				>
+				<Card.Title class="flex items-center gap-2 text-lg">
+					<Lock class="text-primary size-5" />{t('score.locked')}
+				</Card.Title>
 				{#if data.submission.submitted_at && isSubmitted(status)}
 					<Card.Description class="text-base">
 						{t('submit.success_body', {
@@ -479,9 +527,9 @@
 				{#if lastDecision?.status === 'rejected' && !pendingReopen}
 					<Alert.Root variant="warning" data-testid="reopen-rejected">
 						<Alert.Title>{t('request.reopen_title')}: {t('request.rejected')}</Alert.Title>
-						{#if lastDecision.resolution_note}<Alert.Description
-								>{lastDecision.resolution_note}</Alert.Description
-							>{/if}
+						{#if lastDecision.resolution_note}
+							<Alert.Description>{lastDecision.resolution_note}</Alert.Description>
+						{/if}
 					</Alert.Root>
 				{/if}
 				{#if pendingReopen}
@@ -526,7 +574,7 @@
 	{:else if data.participants.length === 0}
 		<Alert.Root variant="info"><Alert.Title>{t('score.no_participants')}</Alert.Title></Alert.Root>
 	{:else}
-		{#if editable}
+		{#if canEdit}
 			<div class="bg-background/95 sticky top-14 z-20 -mx-1 px-1 py-1 backdrop-blur">
 				<SaveIndicator
 					state={sync.state}
@@ -540,15 +588,15 @@
 		<div class="grid gap-3">
 			<Tabs.Root bind:value={filter}>
 				<Tabs.List class="grid h-auto w-full grid-cols-3">
-					<Tabs.Trigger value="all" class="py-2"
-						>{t('score.filter_all')} · {data.participants.length}</Tabs.Trigger
-					>
-					<Tabs.Trigger value="pending" class="py-2"
-						>{t('score.filter_pending')} · {data.participants.length - completeCount}</Tabs.Trigger
-					>
-					<Tabs.Trigger value="done" class="py-2"
-						>{t('score.filter_done')} · {completeCount}</Tabs.Trigger
-					>
+					<Tabs.Trigger value="all" class="py-2">
+						{t('score.filter_all')} · {data.participants.length}
+					</Tabs.Trigger>
+					<Tabs.Trigger value="pending" class="py-2">
+						{t('score.filter_pending')} · {data.participants.length - completeCount}
+					</Tabs.Trigger>
+					<Tabs.Trigger value="done" class="py-2">
+						{t('score.filter_done')} · {completeCount}
+					</Tabs.Trigger>
 				</Tabs.List>
 			</Tabs.Root>
 			{#if data.participants.length > 6}
@@ -567,217 +615,78 @@
 			{/if}
 		</div>
 
-		<ol class="grid gap-4" role="list">
+		<ol class="grid gap-2.5" role="list">
 			{#each visible as p (p.id)}
 				{@const total = totals[p.id]}
-				{@const ctx = data.context[p.id]}
-				{@const m = memento[p.id]}
-				{@const collapsed = total.complete && !editing[p.id]}
 				{@const number = data.participants.indexOf(p) + 1}
-				<li id="p-{p.id}" class="scroll-mt-32">
-					<Card.Root
+				<li id="p-{p.id}">
+					<div
 						data-testid="participant-card"
 						data-evaluated={total.complete || undefined}
 						class={cn(
-							'gap-4 border-2 transition-colors',
-							total.complete && 'border-success/40 bg-success/[0.03]'
+							'bg-card flex items-center gap-3 rounded-xl border p-3 shadow-xs',
+							total.complete && 'border-success/40 bg-success/[0.04]'
 						)}
 					>
-						<Card.Header class="flex flex-row items-start justify-between gap-3">
-							<div class="flex min-w-0 items-start gap-3">
-								<span
-									class={cn(
-										'grid size-9 shrink-0 place-items-center rounded-full text-sm font-bold',
-										total.complete
-											? 'bg-success text-success-foreground'
-											: 'bg-secondary text-secondary-foreground'
-									)}
-								>
-									{#if total.complete}<CircleCheck class="size-5" />{:else}{number}{/if}
-								</span>
-								<div class="min-w-0">
-									<h2 class="text-xl leading-tight font-bold">{p.name}</h2>
-									<p class="text-muted-foreground text-sm">
-										{t('score.participant_code', {
-											code: p.code
-										})}{#if p.affiliation}{` · ${p.affiliation}`}{/if}
-									</p>
-									{#if p.kind === 'team'}
-										<p class="mt-1 flex flex-wrap items-center gap-1.5 text-sm">
-											<Badge variant="secondary"><Users />{t('score.team')}</Badge>
-											{#if p.members}<span class="text-muted-foreground">{p.members}</span>{/if}
-										</p>
-									{/if}
-								</div>
+						<span
+							class={cn(
+								'grid size-10 shrink-0 place-items-center rounded-full text-sm font-bold',
+								total.complete
+									? 'bg-success text-success-foreground'
+									: 'bg-secondary text-secondary-foreground'
+							)}
+						>
+							{#if total.complete}<CircleCheck class="size-5" />{:else}{number}{/if}
+						</span>
+						<div class="min-w-0 flex-1">
+							<div class="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+								<span class="font-mono text-lg font-bold">{p.label}</span>
+								{#if p.kind === 'team'}<Badge variant="secondary"><Users />{t('score.team')}</Badge
+									>{/if}
 							</div>
-							<div
-								class="shrink-0 text-right"
-								data-testid="participant-total"
-								aria-label="{t('score.total')} {total.total} / {total.max}"
-							>
-								<div class="text-2xl font-bold tabular-nums">
-									{formatMark(total.total)}<span
-										class="text-muted-foreground text-base font-semibold"
-										>&nbsp;/&nbsp;{formatMark(total.max)}</span
-									>
-								</div>
-								{#if total.complete}
-									<Badge variant="success" class="mt-1"><CircleCheck />{t('score.evaluated')}</Badge
-									>
-								{:else}
-									<span class="text-muted-foreground text-xs"
-										>{t('score.incomplete', { n: total.required - total.filled })}</span
-									>
-								{/if}
-							</div>
-						</Card.Header>
-
-						<Card.Content class="grid gap-2 text-sm">
-							{#if ctx?.other_events.length}
-								<div class="bg-muted/60 rounded-lg px-3 py-2">
-									<span class="text-muted-foreground font-medium">{t('score.also_in')}:</span>
-									<ul class="mt-1 grid gap-0.5">
-										{#each ctx.other_events as e (e.event_id)}
-											<li class="flex flex-wrap items-center gap-x-2">
-												<span class="font-medium">{e.name}</span>
-												<span class="text-muted-foreground text-xs">{e.group}</span>
-												{#if e.venue}<span
-														class="text-muted-foreground inline-flex items-center gap-1 text-xs"
-														><MapPin class="size-3" />{e.venue}</span
-													>{/if}
-											</li>
-										{/each}
-									</ul>
-								</div>
-							{/if}
-							<div class="flex flex-wrap items-center gap-2">
-								{#if m?.given}
-									<Badge variant="success" class="text-sm"><Gift />{t('memento.given')}</Badge>
-									<span class="text-muted-foreground text-xs">
-										{t('memento.given_by', {
-											name: m.by ?? '',
-											time: formatDateTime(locale(), m.at)
-										})}
+							<div class="text-muted-foreground flex flex-wrap items-center gap-x-2 text-xs">
+								{#if p.registration_no}<span>{t('common.code')}: {p.code}</span>{/if}
+								{#if p.dob}<span>{t('dob.label')}: {formatDob(p.dob)}</span>{/if}
+								{#if dob[p.id]?.verified}
+									<span class="text-success inline-flex items-center gap-0.5">
+										<BadgeCheck class="size-3" />{t('dob.verified')}
 									</span>
-									<Button
-										size="sm"
-										variant="ghost"
-										disabled={mementoBusy[p.id]}
-										onclick={() => toggleMemento(p.id, false)}>{t('memento.undo')}</Button
-									>
-								{:else}
-									<Button
-										size="sm"
-										variant="outline"
-										disabled={mementoBusy[p.id]}
-										onclick={() => toggleMemento(p.id, true)}
-									>
-										<Gift />{t('memento.mark_given')}
-									</Button>
+								{/if}
+								{#if memento[p.id]?.given}
+									<span class="text-success inline-flex items-center gap-0.5">
+										<Gift class="size-3" />{t('memento.label')}
+									</span>
 								{/if}
 							</div>
-						</Card.Content>
-
-						{#if collapsed}
-							<Card.Content>
-								<div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-									{#each data.criteria as c (c.id)}
-										<span
-											><span class="text-muted-foreground">{c.name}</span>
-											<strong class="tabular-nums">{inputs[key(p.id, c.id)]}</strong></span
-										>
-									{/each}
+						</div>
+						<div class="flex shrink-0 flex-col items-end gap-1">
+							{#if total.filled > 0}
+								<div class="text-lg font-bold tabular-nums" data-testid="participant-total">
+									{formatMark(total.total)}<span class="text-muted-foreground text-sm font-semibold"
+										>/{formatMark(total.max)}</span
+									>
 								</div>
-							</Card.Content>
-						{:else}
-							<Card.Content class="grid grid-cols-2 gap-x-3 gap-y-4">
-								{#each data.criteria as c (c.id)}
-									{@const k = key(p.id, c.id)}
-									{@const err = errors[k]}
-									<div class="grid gap-1.5">
-										<Label for="m-{k}" class="text-base">{c.name}</Label>
-										<div class="flex items-center gap-2">
-											<Input
-												id="m-{k}"
-												data-score
-												type="text"
-												inputmode={precision === 0 ? 'numeric' : 'decimal'}
-												enterkeyhint="next"
-												autocomplete="off"
-												aria-label={t('score.input_label', {
-													criterion: c.name,
-													participant: p.name,
-													max: formatMark(c.max_marks)
-												})}
-												aria-invalid={err ? 'true' : undefined}
-												aria-describedby={err ? `e-${k}` : undefined}
-												value={inputs[k] ?? ''}
-												readonly={!editable}
-												oninput={(e) => onInput(p.id, c.id, c.max_marks, e.currentTarget.value)}
-												onblur={() => onBlur(p.id, c.id, c.max_marks)}
-												onkeydown={onKeydown}
-												class="h-14 w-full max-w-28 text-center text-2xl font-bold tabular-nums read-only:bg-muted read-only:border-dashed"
-											/>
-											<span
-												class="text-muted-foreground text-lg font-semibold whitespace-nowrap"
-												aria-hidden="true">/ {formatMark(c.max_marks)}</span
-											>
-										</div>
-										{#if err}
-											<p class="text-destructive text-sm font-semibold" id="e-{k}" role="alert">
-												{errorText(err, c.max_marks)}
-											</p>
-										{/if}
-									</div>
-								{/each}
-							</Card.Content>
-						{/if}
-
-						<Card.Content class="grid gap-1.5">
-							<div class="flex items-center justify-between gap-2">
-								<Label for="r-{p.id}" class="text-sm">{t('score.remarks')}</Label>
-								<span class="text-muted-foreground text-xs" aria-live="polite">
-									{#if remarkState[p.id] === 'saving'}{t(
-											'score.remarks_saving'
-										)}{:else if remarkState[p.id] === 'saved'}{t(
-											'score.remarks_saved'
-										)}{:else if remarkState[p.id] === 'error'}<span class="text-destructive"
-											>{t('score.remarks_failed')}</span
-										>{/if}
-								</span>
-							</div>
-							{#if editable}
-								<Textarea
-									id="r-{p.id}"
-									rows={2}
-									maxlength={2000}
-									value={remarks[p.id] ?? ''}
-									oninput={(e) => onRemark(p.id, e.currentTarget.value)}
-									onblur={() => dirty[p.id] && saveRemark(p.id)}
-									placeholder={t('score.remarks_placeholder')}
-									class="min-h-16 text-base"
-								/>
-							{:else}
-								<p id="r-{p.id}" class="text-muted-foreground text-sm whitespace-pre-wrap">
-									{remarks[p.id] || '–'}
-								</p>
 							{/if}
-						</Card.Content>
-
-						{#if editable && total.complete}
-							<Card.Footer class="justify-end">
-								{#if collapsed}
-									<Button variant="outline" size="sm" onclick={() => (editing[p.id] = true)}
-										><Pencil />{t('score.edit_marks')}</Button
-									>
-								{:else}
-									<Button variant="secondary" size="sm" onclick={() => (editing[p.id] = false)}
-										><CircleCheck />{t('score.done_editing')}</Button
-									>
-								{/if}
-							</Card.Footer>
-						{/if}
-					</Card.Root>
+							{#if !editable}
+								<Button size="sm" variant="outline" onclick={() => openMarks(p.id)}>
+									<Eye />{t('score.view_marks')}
+								</Button>
+							{:else if total.complete}
+								<Button
+									size="sm"
+									variant="outline"
+									onclick={() => openMarks(p.id)}
+									disabled={!canEdit}
+								>
+									<Pencil />{t('score.edit_marks')}
+								</Button>
+							{:else}
+								<Button size="sm" onclick={() => openMarks(p.id)} disabled={!canEdit}>
+									{#if canEdit}<Plus />{:else}<Lock />{/if}{t('score.award_marks')}
+								</Button>
+							{/if}
+						</div>
+					</div>
 				</li>
 			{/each}
 		</ol>
@@ -823,10 +732,7 @@
 									id="preq-p"
 									name="participant_id"
 									value={data.participants[0]?.id ?? ''}
-									options={data.participants.map((p) => ({
-										value: p.id,
-										label: `${p.code} – ${p.name}`
-									}))}
+									options={data.participants.map((p) => ({ value: p.id, label: p.label }))}
 								/>
 							</div>
 						{/if}
@@ -852,7 +758,7 @@
 							<div class="min-w-0">
 								<div class="font-medium">
 									{t(`preq.type_${r.request_type}`)}{#if r.name}: {r.name}{:else if r.participant_id}:
-										{nameOf(r.participant_id)}{/if}
+										{labelOf(r.participant_id)}{/if}
 								</div>
 								<div class="text-muted-foreground">{r.details}</div>
 								{#if r.resolution_note}<div class="text-muted-foreground text-xs">
@@ -878,12 +784,221 @@
 						class="mt-1.5 h-2.5"
 					/>
 				</div>
-				{#if editable}
-					<Button href="/judge/events/{data.event.id}/review" size="lg" data-testid="review-link"
-						>{t('score.review_submit')}<ArrowRight /></Button
-					>
+				{#if canEdit}
+					<Button href="/judge/events/{data.event.id}/review" size="lg" data-testid="review-link">
+						{t('score.review_submit')}<ArrowRight />
+					</Button>
 				{/if}
 			</div>
 		</div>
 	{/if}
 </div>
+
+<Dialog.Root bind:open={dialogOpen}>
+	<Dialog.Content class="max-h-[92svh] gap-0 overflow-y-auto p-0 sm:max-w-xl">
+		{#if current}
+			{@const p = current}
+			{@const total = totals[p.id]}
+			{@const ctx = data.context[p.id]}
+			{@const m = memento[p.id]}
+			{@const d = dob[p.id]}
+			<div
+				class="bg-background/95 sticky top-0 z-10 flex items-start justify-between gap-3 border-b px-5 py-4 pr-12 backdrop-blur"
+			>
+				<div class="min-w-0">
+					<Dialog.Title class="font-mono text-xl font-bold">{p.label}</Dialog.Title>
+					<Dialog.Description class="text-sm">
+						{#if p.registration_no}{t('common.code')}: {p.code} ·
+						{/if}{data.event.name}
+					</Dialog.Description>
+				</div>
+				<div class="shrink-0 text-right">
+					<div class="text-2xl font-bold tabular-nums">
+						{formatMark(total.total)}<span class="text-muted-foreground text-base font-semibold"
+							>&nbsp;/&nbsp;{formatMark(total.max)}</span
+						>
+					</div>
+					{#if total.complete}
+						<Badge variant="success"><CircleCheck />{t('score.evaluated')}</Badge>
+					{:else}
+						<span class="text-muted-foreground text-xs">
+							{t('score.incomplete', { n: total.required - total.filled })}
+						</span>
+					{/if}
+				</div>
+			</div>
+
+			<div class="grid gap-5 px-5 py-4">
+				<div class="grid gap-2 text-sm">
+					<div class="flex flex-wrap items-center gap-2">
+						<span>
+							<span class="text-muted-foreground">{t('dob.label')}:</span>
+							<strong>{p.dob ? formatDob(p.dob) : t('dob.not_given')}</strong>
+						</span>
+						{#if p.kind === 'team'}<Badge variant="secondary"><Users />{t('score.team')}</Badge
+							>{/if}
+					</div>
+					<div class="flex flex-wrap items-center gap-2">
+						{#if d?.verified}
+							<Badge variant="success" class="text-sm"><BadgeCheck />{t('dob.verified')}</Badge>
+							<span class="text-muted-foreground text-xs">
+								{t('memento.given_by', { name: d.by ?? '', time: formatDateTime(locale(), d.at) })}
+							</span>
+							<Button
+								size="sm"
+								variant="ghost"
+								disabled={flagBusy[`d${p.id}`]}
+								onclick={() => toggleDob(p.id, false)}
+							>
+								{t('memento.undo')}
+							</Button>
+						{:else}
+							<Button
+								size="sm"
+								variant="outline"
+								disabled={flagBusy[`d${p.id}`]}
+								onclick={() => toggleDob(p.id, true)}
+							>
+								<BadgeCheck />{t('dob.mark_verified')}
+							</Button>
+						{/if}
+					</div>
+					<div class="flex flex-wrap items-center gap-2">
+						{#if m?.given}
+							<Badge variant="success" class="text-sm"><Gift />{t('memento.given')}</Badge>
+							<span class="text-muted-foreground text-xs">
+								{t('memento.given_by', { name: m.by ?? '', time: formatDateTime(locale(), m.at) })}
+							</span>
+							<Button
+								size="sm"
+								variant="ghost"
+								disabled={flagBusy[`m${p.id}`]}
+								onclick={() => toggleMemento(p.id, false)}
+							>
+								{t('memento.undo')}
+							</Button>
+						{:else}
+							<Button
+								size="sm"
+								variant="outline"
+								disabled={flagBusy[`m${p.id}`]}
+								onclick={() => toggleMemento(p.id, true)}
+							>
+								<Gift />{t('memento.mark_given')}
+							</Button>
+						{/if}
+					</div>
+					{#if ctx?.other_events.length}
+						<div class="bg-muted/60 rounded-lg px-3 py-2">
+							<span class="text-muted-foreground font-medium">{t('score.also_in')}:</span>
+							<ul class="mt-1 grid gap-0.5">
+								{#each ctx.other_events as e (e.event_id)}
+									<li class="flex flex-wrap items-center gap-x-2">
+										<span class="font-medium">{e.name}</span>
+										<span class="text-muted-foreground text-xs">{e.group}</span>
+										{#if e.venue}
+											<span class="text-muted-foreground inline-flex items-center gap-1 text-xs">
+												<MapPin class="size-3" />{e.venue}
+											</span>
+										{/if}
+									</li>
+								{/each}
+							</ul>
+						</div>
+					{/if}
+				</div>
+
+				<div class="grid grid-cols-2 gap-x-3 gap-y-4">
+					{#each data.criteria as c (c.id)}
+						{@const k = key(p.id, c.id)}
+						{@const err = errors[k]}
+						<div class="grid gap-1.5">
+							<Label for="m-{k}" class="text-base">{c.name}</Label>
+							<div class="flex items-center gap-2">
+								<Input
+									id="m-{k}"
+									data-score
+									type="text"
+									inputmode={precision === 0 ? 'numeric' : 'decimal'}
+									enterkeyhint="next"
+									autocomplete="off"
+									aria-label={t('score.input_label', {
+										criterion: c.name,
+										participant: p.label,
+										max: formatMark(c.max_marks)
+									})}
+									aria-invalid={err ? 'true' : undefined}
+									aria-describedby={err ? `e-${k}` : undefined}
+									value={inputs[k] ?? ''}
+									readonly={!canEdit}
+									oninput={(e) => onInput(p.id, c.id, c.max_marks, e.currentTarget.value)}
+									onblur={() => onBlur(p.id, c.id, c.max_marks)}
+									onkeydown={onKeydown}
+									class="h-14 w-full max-w-28 text-center text-2xl font-bold tabular-nums read-only:bg-muted read-only:border-dashed"
+								/>
+								<span
+									class="text-muted-foreground text-lg font-semibold whitespace-nowrap"
+									aria-hidden="true"
+								>
+									/ {formatMark(c.max_marks)}
+								</span>
+							</div>
+							{#if err}
+								<p class="text-destructive text-sm font-semibold" id="e-{k}" role="alert">
+									{errorText(err, c.max_marks)}
+								</p>
+							{/if}
+						</div>
+					{/each}
+				</div>
+
+				<div class="grid gap-1.5">
+					<div class="flex items-center justify-between gap-2">
+						<Label for="r-{p.id}" class="text-sm">{t('score.remarks')}</Label>
+						<span class="text-muted-foreground text-xs" aria-live="polite">
+							{#if remarkState[p.id] === 'saving'}{t(
+									'score.remarks_saving'
+								)}{:else if remarkState[p.id] === 'saved'}{t(
+									'score.remarks_saved'
+								)}{:else if remarkState[p.id] === 'error'}<span class="text-destructive"
+									>{t('score.remarks_failed')}</span
+								>{/if}
+						</span>
+					</div>
+					{#if canEdit}
+						<Textarea
+							id="r-{p.id}"
+							rows={3}
+							maxlength={2000}
+							value={remarks[p.id] ?? ''}
+							oninput={(e) => onRemark(p.id, e.currentTarget.value)}
+							onblur={() => dirty[p.id] && saveRemark(p.id)}
+							placeholder={t('score.remarks_placeholder')}
+							class="text-base"
+						/>
+					{:else}
+						<p id="r-{p.id}" class="text-muted-foreground text-sm whitespace-pre-wrap">
+							{remarks[p.id] || '–'}
+						</p>
+					{/if}
+				</div>
+			</div>
+
+			<div
+				class="bg-background/95 sticky bottom-0 flex items-center justify-between gap-3 border-t px-5 py-3 backdrop-blur"
+			>
+				<div class="min-w-0 flex-1">
+					{#if canEdit}
+						<SaveIndicator
+							state={sync.state}
+							lastSavedAt={sync.lastSavedAt}
+							pending={sync.pending}
+							onretry={() => sync.flush()}
+						/>
+					{/if}
+				</div>
+				<Button size="lg" onclick={() => (dialogOpen = false)}>{t('score.done_editing')}</Button>
+			</div>
+		{/if}
+	</Dialog.Content>
+</Dialog.Root>

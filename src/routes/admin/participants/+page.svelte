@@ -23,7 +23,10 @@
 	import ParticipantForm from '#lib/components/app/ParticipantForm.svelte';
 	import AppSelect from '#lib/components/app/AppSelect.svelte';
 	import { groupOptions, eventOptions, all } from '#lib/options.ts';
+	import AddEventDialog from '#lib/components/app/AddEventDialog.svelte';
+	import BadgeCheck from '@lucide/svelte/icons/badge-check';
 	import { t } from '#lib/i18n/t.svelte.ts';
+	import { formatDob } from '#lib/i18n/index.ts';
 
 	let { data, form } = $props();
 	const allEvents = $derived(
@@ -76,7 +79,7 @@
 		<Card.Content>
 			<form
 				method="GET"
-				class="grid items-end gap-4 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_auto_auto]"
+				class="grid items-end gap-4 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr_auto_auto]"
 			>
 				<div class="grid gap-2">
 					<Label for="f-q">{t('common.search')}</Label>
@@ -103,6 +106,15 @@
 						name="event"
 						value={data.filters.event}
 						options={[all(t('common.all')), ...eventOptions(data.groups)]}
+					/>
+				</div>
+				<div class="grid gap-2">
+					<Label for="f-samithi">{t('admin.participants.affiliation')}</Label>
+					<AppSelect
+						id="f-samithi"
+						name="samithi"
+						value={data.filters.samithi}
+						options={[all(t('common.all')), ...data.samithis.map((s) => ({ value: s, label: s }))]}
 					/>
 				</div>
 				<div class="flex h-11 items-center gap-2">
@@ -142,21 +154,49 @@
 								{#if p.members}<div class="text-muted-foreground mt-0.5 text-xs">
 										{t('score.members')}: {p.members}
 									</div>{/if}
-								<form method="POST" action="?/memento" use:enhance={withProgress()} class="mt-1.5">
-									<input type="hidden" name="id" value={p.id} />
-									<input type="hidden" name="given" value={p.memento_given ? 'false' : 'true'} />
-									<button
-										type="submit"
-										class="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs {p.memento_given
-											? 'border-success/40 bg-success/10 text-success'
-											: 'text-muted-foreground hover:bg-muted'}"
-										aria-pressed={p.memento_given}
-									>
-										<Gift class="size-3" />{p.memento_given
-											? t('memento.given')
-											: t('memento.mark_given')}
-									</button>
-								</form>
+								{#if p.registration_no || p.dob}
+									<div class="text-muted-foreground mt-0.5 text-xs">
+										{#if p.registration_no}{t('score.reg_no')}: {p.registration_no}{/if}
+										{#if p.registration_no && p.dob}·{/if}
+										{#if p.dob}{t('dob.label')}: {formatDob(p.dob)}{/if}
+									</div>
+								{/if}
+								<div class="mt-1.5 flex flex-wrap gap-1.5">
+									<form method="POST" action="?/dobVerified" use:enhance={withProgress()}>
+										<input type="hidden" name="id" value={p.id} />
+										<input
+											type="hidden"
+											name="verified"
+											value={p.dob_verified ? 'false' : 'true'}
+										/>
+										<button
+											type="submit"
+											class="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs {p.dob_verified
+												? 'border-success/40 bg-success/10 text-success'
+												: 'text-muted-foreground hover:bg-muted'}"
+											aria-pressed={p.dob_verified}
+										>
+											<BadgeCheck class="size-3" />{p.dob_verified
+												? t('dob.verified')
+												: t('dob.mark_verified')}
+										</button>
+									</form>
+									<form method="POST" action="?/memento" use:enhance={withProgress()}>
+										<input type="hidden" name="id" value={p.id} />
+										<input type="hidden" name="given" value={p.memento_given ? 'false' : 'true'} />
+										<button
+											type="submit"
+											class="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs {p.memento_given
+												? 'border-success/40 bg-success/10 text-success'
+												: 'text-muted-foreground hover:bg-muted'}"
+											aria-pressed={p.memento_given}
+										>
+											<Gift class="size-3" />{p.memento_given
+												? t('memento.given')
+												: t('memento.mark_given')}
+										</button>
+									</form>
+								</div>
 								{#if !p.is_active}<Badge variant="neutral" class="mt-1"
 										>{t('common.inactive')}</Badge
 									>{/if}
@@ -164,14 +204,47 @@
 							<Table.Cell class="hidden md:table-cell">{p.groups?.name}</Table.Cell>
 							<Table.Cell class="hidden whitespace-normal lg:table-cell">
 								<div class="flex flex-wrap gap-1">
-									{#each p.event_participants.filter((l) => l.is_active) as l (l.event_id)}<Badge
-											variant="secondary">{l.events?.name}</Badge
-										>{:else}<span class="text-muted-foreground text-sm">{t('common.none')}</span
+									{#each p.event_participants.filter((l) => l.is_active) as l (l.event_id)}
+										<span
+											class="bg-secondary inline-flex items-center gap-0.5 rounded-full py-0.5 pr-0.5 pl-2.5 text-xs font-medium"
+										>
+											{l.events?.name}
+											<ConfirmForm
+												action="?/removeEvent"
+												label="✕"
+												title={t('admin.participants.remove_event', {
+													event: l.events?.name ?? ''
+												})}
+												message={p.name}
+												optionalNote
+												reasonLabel={t('common.reason')}
+												danger
+												variant="ghost"
+												size="icon-xs"
+											>
+												{#snippet fields()}
+													<input type="hidden" name="id" value={p.id} />
+													<input type="hidden" name="event_id" value={l.event_id} />
+												{/snippet}
+											</ConfirmForm>
+										</span>
+									{:else}<span class="text-muted-foreground text-sm">{t('common.none')}</span
 										>{/each}
 								</div>
 							</Table.Cell>
 							<Table.Cell class="text-right">
-								<div class="flex justify-end gap-1">
+								<div class="flex flex-wrap justify-end gap-1">
+									<AddEventDialog
+										participant={{
+											id: p.id,
+											name: p.name,
+											group_id: p.group_id,
+											eventIds: p.event_participants
+												.filter((l) => l.is_active)
+												.map((l) => l.event_id)
+										}}
+										groups={data.groups}
+									/>
 									<Button
 										href="/admin/feedback/pdf?participant={p.id}"
 										variant="ghost"

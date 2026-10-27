@@ -65,7 +65,8 @@
 					{#each data.participants as p (p.id)}
 						<Table.Row>
 							<Table.Cell class="whitespace-normal"
-								>{p.name} <span class="text-muted-foreground text-sm">({p.code})</span></Table.Cell
+								><span class="font-mono">{p.label}</span>{#if p.registration_no}
+									<span class="text-muted-foreground text-sm">({p.code})</span>{/if}</Table.Cell
 							>
 							<Table.Cell class="text-right font-semibold tabular-nums"
 								>{formatMark(Number(totals[p.id] ?? 0))} / {formatMark(max)}</Table.Cell

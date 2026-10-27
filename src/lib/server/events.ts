@@ -30,7 +30,8 @@ export async function saveEvent(locals: App.Locals, f: FormData) {
 		p_display_order: int(f, 'display_order'),
 		p_is_active: isUuid(id) ? bool(f, 'is_active') : true,
 		p_reason: optStr(f, 'reason') ?? '',
-		p_venue: optStr(f, 'venue') ?? ''
+		p_venue: optStr(f, 'venue') ?? '',
+		p_participation: str(f, 'participation') === 'team' ? 'team' : 'individual'
 	});
 	if (error)
 		return failWith(locals.locale, error, {

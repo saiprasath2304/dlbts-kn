@@ -53,3 +53,10 @@ export function formatTime(locale: Locale, value: string | Date | null | undefin
 		timeZone: 'Asia/Kolkata'
 	}).format(d);
 }
+
+/** "2015-06-21" -> "21-06-2015" (no timezone shifts: a DOB is a calendar date). */
+export function formatDob(value: string | null | undefined): string {
+	if (!value) return '';
+	const m = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+	return m ? `${m[3]}-${m[2]}-${m[1]}` : value;
+}

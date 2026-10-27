@@ -93,7 +93,7 @@
 				{#each rows as { p, total } (p.id)}
 					<Table.Row>
 						<Table.Cell class="whitespace-normal"
-							><span class="font-semibold">{p.name}</span><br /><span
+							><span class="font-mono font-semibold">{p.label}</span><br /><span
 								class="text-muted-foreground text-sm">{p.code}</span
 							></Table.Cell
 						>

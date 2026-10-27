@@ -15,6 +15,7 @@
 		description: string | null;
 		instructions: string | null;
 		venue?: string | null;
+		participation?: string;
 		score_precision: number;
 		display_order: number;
 		is_active: boolean;
@@ -73,6 +74,18 @@
 			name="display_order"
 			type="number"
 			value={event?.display_order ?? 0}
+		/>
+	</div>
+	<div class="grid gap-2">
+		<Label for="e-part-{sfx}">{t('admin.events.participation')}</Label>
+		<AppSelect
+			id="e-part-{sfx}"
+			name="participation"
+			value={event?.participation ?? 'individual'}
+			options={[
+				{ value: 'individual', label: t('admin.participants.kind_individual_event') },
+				{ value: 'team', label: t('admin.participants.kind_team_event') }
+			]}
 		/>
 	</div>
 	<div class="grid gap-2 sm:col-span-2">

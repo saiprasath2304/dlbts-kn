@@ -379,6 +379,7 @@ export type Database = {
 					score_precision: number;
 					updated_at: string;
 					venue: string | null;
+					participation: string;
 				};
 				ComputedFields: never;
 				Insert: {
@@ -394,6 +395,7 @@ export type Database = {
 					score_precision?: number;
 					updated_at?: string;
 					venue?: string | null;
+					participation?: string;
 				};
 				Update: {
 					code?: string;
@@ -408,6 +410,7 @@ export type Database = {
 					score_precision?: number;
 					updated_at?: string;
 					venue?: string | null;
+					participation?: string;
 				};
 				Relationships: [
 					{
@@ -643,6 +646,10 @@ export type Database = {
 					memento_given: boolean;
 					memento_given_at: string | null;
 					memento_given_by: string | null;
+					dob: string | null;
+					dob_verified: boolean;
+					dob_verified_at: string | null;
+					dob_verified_by: string | null;
 				};
 				ComputedFields: never;
 				Insert: {
@@ -661,6 +668,10 @@ export type Database = {
 					memento_given?: boolean;
 					memento_given_at?: string | null;
 					memento_given_by?: string | null;
+					dob?: string | null;
+					dob_verified?: boolean;
+					dob_verified_at?: string | null;
+					dob_verified_by?: string | null;
 				};
 				Update: {
 					affiliation?: string | null;
@@ -678,6 +689,10 @@ export type Database = {
 					memento_given?: boolean;
 					memento_given_at?: string | null;
 					memento_given_by?: string | null;
+					dob?: string | null;
+					dob_verified?: boolean;
+					dob_verified_at?: string | null;
+					dob_verified_by?: string | null;
 				};
 				Relationships: [
 					{
@@ -1237,6 +1252,7 @@ export type Database = {
 					p_reason?: string;
 					p_score_precision: number;
 					p_venue?: string;
+					p_participation?: string;
 				};
 				Returns: string;
 			};
@@ -1299,6 +1315,9 @@ export type Database = {
 					memento_given: boolean;
 					memento_given_at: string | null;
 					memento_given_by_name: string | null;
+					dob_verified: boolean;
+					dob_verified_at: string | null;
+					dob_verified_by_name: string | null;
 				}[];
 			};
 			event_tie_alerts: { Args: { p_event_id: string }; Returns: Json };
@@ -1329,6 +1348,9 @@ export type Database = {
 				Args: { p_participant_id: string; p_remark: string; p_submission_id: string };
 				Returns: Json;
 			};
+			scoring_is_open: { Args: Record<PropertyKey, never>; Returns: boolean };
+			admin_set_scoring_open: { Args: { p_open: boolean }; Returns: boolean };
+			set_dob_verified: { Args: { p_participant_id: string; p_verified: boolean }; Returns: Json };
 			set_memento: { Args: { p_given: boolean; p_participant_id: string }; Returns: Json };
 			event_results_internal: { Args: { p_event_id: string }; Returns: Json };
 			finalize_event_results: { Args: { p_event_id: string }; Returns: string };

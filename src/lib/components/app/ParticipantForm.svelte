@@ -15,6 +15,7 @@
 		registration_no: string | null;
 		notes: string | null;
 		members?: string | null;
+		dob?: string | null;
 	};
 	let {
 		participant,
@@ -75,6 +76,10 @@
 	<div class="grid gap-2">
 		<Label for="p-reg-{sfx}">{t('admin.participants.registration_no')}</Label>
 		<Input id="p-reg-{sfx}" name="registration_no" value={participant?.registration_no ?? ''} />
+	</div>
+	<div class="grid gap-2">
+		<Label for="p-dob-{sfx}">{t('admin.participants.dob')}</Label>
+		<Input id="p-dob-{sfx}" name="dob" type="date" value={participant?.dob ?? ''} />
 	</div>
 	<div class="grid gap-2">
 		<Label for="p-notes-{sfx}">{t('admin.participants.notes')}</Label>

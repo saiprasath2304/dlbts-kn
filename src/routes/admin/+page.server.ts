@@ -1,9 +1,13 @@
 import { realtimeToken } from '#lib/server/admin.ts';
-import type { PageServerLoad } from './$types';
+import { translate } from '#lib/i18n/index.ts';
+import { failWith } from '#lib/server/errors.ts';
+import { bool } from '#lib/server/form.ts';
+import { requireAdmin } from '#lib/server/guards.ts';
+import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const db = locals.supabase;
-	const [progressRes, judgesRes, assignRes, groupsRes, venuesRes] = await Promise.all([
+	const [progressRes, judgesRes, assignRes, groupsRes, venuesRes, openRes] = await Promise.all([
 		db.rpc('admin_event_progress'),
 		db
 			.from('profiles')
@@ -13,7 +17,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			.order('username'),
 		db.from('judge_assignments').select('event_id, judge_id').eq('is_active', true),
 		db.from('groups').select('id').eq('is_active', true),
-		db.from('events').select('id, venue')
+		db.from('events').select('id, venue'),
+		db.rpc('scoring_is_open')
 	]);
 
 	const all = (progressRes.data ?? []).filter((e) => e.event_active);
@@ -70,6 +75,19 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			venue: (venuesRes.data ?? []).find((v) => v.id === r.event_id)?.venue ?? null
 		})),
 		token: await realtimeToken(db),
+		scoringOpen: openRes.data === true,
 		loadedAt: new Date().toISOString()
 	};
+};
+
+export const actions: Actions = {
+	scoring: async ({ request, locals }) => {
+		requireAdmin(locals);
+		const open = bool(await request.formData(), 'open');
+		const { error } = await locals.supabase.rpc('admin_set_scoring_open', { p_open: open });
+		if (error) return failWith(locals.locale, error);
+		return {
+			success: translate(locals.locale, open ? 'lock.admin_state_open' : 'lock.admin_state_locked')
+		};
+	}
 };

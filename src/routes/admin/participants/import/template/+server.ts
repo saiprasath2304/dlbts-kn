@@ -4,15 +4,28 @@ import type { RequestHandler } from './$types';
 
 const EXAMPLE = [
 	[
-		'G1-SLOKA-001',
+		'G1-001',
 		'Example Participant',
 		'grp1',
 		'sloka',
 		'individual',
-		'Example Unit',
+		'Example Samithi',
+		'REG-101',
 		'',
 		'',
-		''
+		'2015-06-21'
+	],
+	[
+		'G1-001',
+		'Example Participant',
+		'grp1',
+		'drawing',
+		'individual',
+		'Example Samithi',
+		'REG-101',
+		'',
+		'',
+		'2015-06-21'
 	],
 	[
 		'T-QUIZ-01',
@@ -20,10 +33,11 @@ const EXAMPLE = [
 		'team',
 		'quiz',
 		'team',
-		'Example Unit',
+		'Example Samithi',
 		'',
 		'',
-		'Member One, Member Two'
+		'Member One, Member Two',
+		''
 	]
 ];
 

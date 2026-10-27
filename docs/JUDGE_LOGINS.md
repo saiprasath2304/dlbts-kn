@@ -6,64 +6,64 @@ for anyone under **Judges**.
 
 ## Group 1
 
-| Event | Who | Judge 1 | Judge 2 |
-|---|---|---|---|
-| Sloka Chanting | Boys and girls together | `judge01grp1sloka` | `judge02grp1sloka` |
-| Veda Chanting | Boys and girls together | `judge01grp1veda` | `judge02grp1veda` |
-| Tamil Chant | Boys and girls together | `judge01grp1tamil` | `judge02grp1tamil` |
-| Story Telling | Boys and girls together | `judge01grp1story` | `judge02grp1story` |
-| Fancy Dress | Boys and girls together | `judge01grp1fancy` | `judge02grp1fancy` |
-| Drawing | Boys and girls together | `judge01grp1drawing` | `judge02grp1drawing` |
-| Bhajan Singing | Boys and girls together | `judge01grp1bhajan` | `judge02grp1bhajan` |
+| Event          | Who                     | Judge 1              | Judge 2              |
+| -------------- | ----------------------- | -------------------- | -------------------- |
+| Sloka Chanting | Boys and girls together | `judge01grp1sloka`   | `judge02grp1sloka`   |
+| Veda Chanting  | Boys and girls together | `judge01grp1veda`    | `judge02grp1veda`    |
+| Tamil Chant    | Boys and girls together | `judge01grp1tamil`   | `judge02grp1tamil`   |
+| Story Telling  | Boys and girls together | `judge01grp1story`   | `judge02grp1story`   |
+| Fancy Dress    | Boys and girls together | `judge01grp1fancy`   | `judge02grp1fancy`   |
+| Drawing        | Boys and girls together | `judge01grp1drawing` | `judge02grp1drawing` |
+| Bhajan Singing | Boys and girls together | `judge01grp1bhajan`  | `judge02grp1bhajan`  |
 
 ## Group 2
 
-| Event | Who | Judge 1 | Judge 2 |
-|---|---|---|---|
-| Sloka Chanting – Boys | Boys | `judge01grp2slokaboys` | `judge02grp2slokaboys` |
-| Sloka Chanting – Girls | Girls | `judge01grp2slokagirls` | `judge02grp2slokagirls` |
-| Veda Chanting – Boys | Boys | `judge01grp2vedaboys` | `judge02grp2vedaboys` |
-| Veda Chanting – Girls | Girls | `judge01grp2vedagirls` | `judge02grp2vedagirls` |
-| Tamil Chant – Boys | Boys | `judge01grp2tamilboys` | `judge02grp2tamilboys` |
-| Tamil Chant – Girls | Girls | `judge01grp2tamilgirls` | `judge02grp2tamilgirls` |
-| Just A Minute (JAM) – English | Boys and girls together | `judge01grp2jameng` | `judge02grp2jameng` |
-| Just A Minute (JAM) – Tamil | Boys and girls together | `judge01grp2jamtamil` | `judge02grp2jamtamil` |
-| Drawing | Boys and girls together | `judge01grp2drawing` | `judge02grp2drawing` |
-| Bhajan Singing – Boys | Boys | `judge01grp2bhajanboys` | `judge02grp2bhajanboys` |
-| Bhajan Singing – Girls | Girls | `judge01grp2bhajangirls` | `judge02grp2bhajangirls` |
-| Dumb Charades | Teams of 2 boys or 2 girls | `judge01grp2charades` | `judge02grp2charades` |
+| Event                         | Who                        | Judge 1                  | Judge 2                  |
+| ----------------------------- | -------------------------- | ------------------------ | ------------------------ |
+| Sloka Chanting – Boys         | Boys                       | `judge01grp2slokaboys`   | `judge02grp2slokaboys`   |
+| Sloka Chanting – Girls        | Girls                      | `judge01grp2slokagirls`  | `judge02grp2slokagirls`  |
+| Veda Chanting – Boys          | Boys                       | `judge01grp2vedaboys`    | `judge02grp2vedaboys`    |
+| Veda Chanting – Girls         | Girls                      | `judge01grp2vedagirls`   | `judge02grp2vedagirls`   |
+| Tamil Chant – Boys            | Boys                       | `judge01grp2tamilboys`   | `judge02grp2tamilboys`   |
+| Tamil Chant – Girls           | Girls                      | `judge01grp2tamilgirls`  | `judge02grp2tamilgirls`  |
+| Just A Minute (JAM) – English | Boys and girls together    | `judge01grp2jameng`      | `judge02grp2jameng`      |
+| Just A Minute (JAM) – Tamil   | Boys and girls together    | `judge01grp2jamtamil`    | `judge02grp2jamtamil`    |
+| Drawing                       | Boys and girls together    | `judge01grp2drawing`     | `judge02grp2drawing`     |
+| Bhajan Singing – Boys         | Boys                       | `judge01grp2bhajanboys`  | `judge02grp2bhajanboys`  |
+| Bhajan Singing – Girls        | Girls                      | `judge01grp2bhajangirls` | `judge02grp2bhajangirls` |
+| Dumb Charades                 | Teams of 2 boys or 2 girls | `judge01grp2charades`    | `judge02grp2charades`    |
 
 ## Group 3
 
-| Event | Who | Judge 1 | Judge 2 |
-|---|---|---|---|
-| Sloka Chanting – Boys | Boys | `judge01grp3slokaboys` | `judge02grp3slokaboys` |
-| Sloka Chanting – Girls | Girls | `judge01grp3slokagirls` | `judge02grp3slokagirls` |
-| Veda Chanting – Boys | Boys | `judge01grp3vedaboys` | `judge02grp3vedaboys` |
-| Veda Chanting – Girls | Girls | `judge01grp3vedagirls` | `judge02grp3vedagirls` |
-| Tamil Chant – Boys | Boys | `judge01grp3tamilboys` | `judge02grp3tamilboys` |
-| Tamil Chant – Girls | Girls | `judge01grp3tamilgirls` | `judge02grp3tamilgirls` |
-| TED SAI – English | Boys and girls together | `judge01grp3tedeng` | `judge02grp3tedeng` |
-| TED SAI – Tamil | Boys and girls together | `judge01grp3tedtamil` | `judge02grp3tedtamil` |
-| Drawing | Boys and girls together | `judge01grp3drawing` | `judge02grp3drawing` |
-| Bhajan Singing – Boys | Boys | `judge01grp3bhajanboys` | `judge02grp3bhajanboys` |
-| Bhajan Singing – Girls | Girls | `judge01grp3bhajangirls` | `judge02grp3bhajangirls` |
+| Event                  | Who                     | Judge 1                  | Judge 2                  |
+| ---------------------- | ----------------------- | ------------------------ | ------------------------ |
+| Sloka Chanting – Boys  | Boys                    | `judge01grp3slokaboys`   | `judge02grp3slokaboys`   |
+| Sloka Chanting – Girls | Girls                   | `judge01grp3slokagirls`  | `judge02grp3slokagirls`  |
+| Veda Chanting – Boys   | Boys                    | `judge01grp3vedaboys`    | `judge02grp3vedaboys`    |
+| Veda Chanting – Girls  | Girls                   | `judge01grp3vedagirls`   | `judge02grp3vedagirls`   |
+| Tamil Chant – Boys     | Boys                    | `judge01grp3tamilboys`   | `judge02grp3tamilboys`   |
+| Tamil Chant – Girls    | Girls                   | `judge01grp3tamilgirls`  | `judge02grp3tamilgirls`  |
+| TED SAI – English      | Boys and girls together | `judge01grp3tedeng`      | `judge02grp3tedeng`      |
+| TED SAI – Tamil        | Boys and girls together | `judge01grp3tedtamil`    | `judge02grp3tedtamil`    |
+| Drawing                | Boys and girls together | `judge01grp3drawing`     | `judge02grp3drawing`     |
+| Bhajan Singing – Boys  | Boys                    | `judge01grp3bhajanboys`  | `judge02grp3bhajanboys`  |
+| Bhajan Singing – Girls | Girls                   | `judge01grp3bhajangirls` | `judge02grp3bhajangirls` |
 
 ## Team Events
 
-| Event | Who | Judge 1 | Judge 2 |
-|---|---|---|---|
-| Wealth out of Waste | Team event | `judge01teamwaste` | `judge02teamwaste` |
-| Quiz | Team event | `judge01teamquiz` | `judge02teamquiz` |
-| Rangoli | Team event | `judge01teamrangoli` | `judge02teamrangoli` |
+| Event               | Who        | Judge 1              | Judge 2              |
+| ------------------- | ---------- | -------------------- | -------------------- |
+| Wealth out of Waste | Team event | `judge01teamwaste`   | `judge02teamwaste`   |
+| Quiz                | Team event | `judge01teamquiz`    | `judge02teamquiz`    |
+| Rangoli             | Team event | `judge01teamrangoli` | `judge02teamrangoli` |
 
 ## Group Events
 
-| Event | Who | Judge 1 | Judge 2 |
-|---|---|---|---|
-| Altar Decoration – Boys | Boys | `judge01geventaltarboys` | `judge02geventaltarboys` |
-| Altar Decoration – Girls | Girls | `judge01geventaltargirls` | `judge02geventaltargirls` |
-| Namakam Chanting – Boys | Boys | `judge01geventnamakamboys` | `judge02geventnamakamboys` |
+| Event                    | Who   | Judge 1                     | Judge 2                     |
+| ------------------------ | ----- | --------------------------- | --------------------------- |
+| Altar Decoration – Boys  | Boys  | `judge01geventaltarboys`    | `judge02geventaltarboys`    |
+| Altar Decoration – Girls | Girls | `judge01geventaltargirls`   | `judge02geventaltargirls`   |
+| Namakam Chanting – Boys  | Boys  | `judge01geventnamakamboys`  | `judge02geventnamakamboys`  |
 | Namakam Chanting – Girls | Girls | `judge01geventnamakamgirls` | `judge02geventnamakamgirls` |
 
 Total: 37 events, 74 judge accounts.

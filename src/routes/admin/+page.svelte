@@ -3,6 +3,10 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
+	import Lock from '@lucide/svelte/icons/lock';
+	import LockOpen from '@lucide/svelte/icons/lock-open';
+	import FormFeedback from '#lib/components/app/FormFeedback.svelte';
+	import ConfirmForm from '#lib/components/app/ConfirmForm.svelte';
 	import * as Table from '#lib/components/ui/table/index.js';
 	import { Badge } from '#lib/components/ui/badge/index.js';
 	import { Progress } from '#lib/components/ui/progress/index.js';
@@ -15,7 +19,7 @@
 	import { LiveRefresh } from '#lib/realtime.svelte.ts';
 	import { cn } from '#lib/utils.js';
 
-	let { data } = $props();
+	let { data, form } = $props();
 
 	const live = new LiveRefresh(untrack(() => data.token));
 	onMount(() => {
@@ -55,6 +59,49 @@
 			</span>
 		{/snippet}
 	</PageHeader>
+
+	<FormFeedback {form} />
+
+	<section
+		class={cn(
+			'flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4',
+			data.scoringOpen ? 'border-success/40 bg-success/5' : 'border-warning/60 bg-warning/10'
+		)}
+		data-testid="scoring-lock"
+	>
+		<div class="flex items-center gap-3">
+			<span
+				class={cn(
+					'grid size-10 place-items-center rounded-full',
+					data.scoringOpen
+						? 'bg-success text-success-foreground'
+						: 'bg-warning text-warning-foreground'
+				)}
+			>
+				{#if data.scoringOpen}<LockOpen class="size-5" />{:else}<Lock class="size-5" />{/if}
+			</span>
+			<div>
+				<p class="font-semibold">{t('lock.admin_title')}</p>
+				<p class="text-muted-foreground text-sm">
+					{data.scoringOpen ? t('lock.admin_state_open') : t('lock.admin_state_locked')}
+				</p>
+			</div>
+		</div>
+		<ConfirmForm
+			action="?/scoring"
+			label={data.scoringOpen ? t('lock.admin_close') : t('lock.admin_open')}
+			title={data.scoringOpen ? t('lock.admin_close') : t('lock.admin_open')}
+			message={data.scoringOpen ? t('lock.admin_state_locked') : t('lock.admin_state_open')}
+			variant={data.scoringOpen ? 'outline' : 'default'}
+			danger={data.scoringOpen}
+		>
+			{#snippet fields()}<input
+					type="hidden"
+					name="open"
+					value={data.scoringOpen ? 'false' : 'true'}
+				/>{/snippet}
+		</ConfirmForm>
+	</section>
 
 	<div class="grid grid-cols-2 gap-3 lg:grid-cols-4" data-testid="stats">
 		<StatCard label={t('admin.dashboard.overview_events')} value={s.complete} of={s.events} />

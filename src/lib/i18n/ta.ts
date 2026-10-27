@@ -256,7 +256,7 @@ export const ta: Record<MessageKey, string> = {
 	'admin.participants.kind': 'வகை',
 	'admin.participants.kind_individual': 'தனிநபர்',
 	'admin.participants.kind_team': 'அணி',
-	'admin.participants.affiliation': 'அலகு / அமைப்பு',
+	'admin.participants.affiliation': 'சமிதி',
 	'admin.participants.registration_no': 'பதிவு எண்',
 	'admin.participants.notes': 'குறிப்புகள்',
 	'admin.participants.events': 'போட்டிகள்',
@@ -271,7 +271,7 @@ export const ta: Record<MessageKey, string> = {
 	'admin.import.help':
 		'கீழே உள்ள நெடுவரிசைகளுடன் CSV அல்லது Excel (.xlsx) கோப்பைப் பதிவேற்றவும். சேமிப்பதற்கு முன் முன்னோட்டம் காட்டப்படும்.',
 	'admin.import.columns':
-		'நெடுவரிசைகள்: code, name, group_code, event_code, kind (individual/team), affiliation, registration_no, notes, members (teams)',
+		'நெடுவரிசைகள்: code, name, group_code, event_code, kind (individual/team), affiliation, registration_no, notes, members (teams), dob (YYYY-MM-DD); affiliation = Samithi',
 	'admin.import.template': 'மாதிரிக் கோப்பைப் பதிவிறக்கு',
 	'admin.import.file': 'கோப்பு',
 	'admin.import.preview': 'முன்னோட்டம்',
@@ -427,6 +427,8 @@ export const ta: Record<MessageKey, string> = {
 	'error.network': 'சேவையகத்தை அணுக முடியவில்லை. இணைப்பைச் சரிபார்க்கவும்.',
 	'error.session': 'உங்கள் அமர்வு முடிந்துவிட்டது. மீண்டும் உள்நுழையவும்.',
 
+	'import.err.INVALID_DOB':
+		'பிறந்த தேதி 2015-06-21 அல்லது 21-06-2015 போன்ற வடிவில் இருக்க வேண்டும்',
 	'import.err.INVALID_CODE': 'குறியீடு இல்லை அல்லது ஏற்கப்படாத எழுத்துகள் உள்ளன',
 	'import.err.INVALID_NAME': 'பெயர் இல்லை அல்லது மிக நீளமாக உள்ளது',
 	'import.err.INVALID_KIND': 'வகை individual அல்லது team ஆக இருக்க வேண்டும்',
@@ -450,7 +452,7 @@ export const ta: Record<MessageKey, string> = {
 	'report.rank': 'இடம்',
 	'report.participant': 'பங்கேற்பாளர் / அணி',
 	'report.code': 'குறியீடு',
-	'report.affiliation': 'அலகு',
+	'report.affiliation': 'சமிதி',
 	'report.aggregate': 'மொத்தம்',
 	'report.judges': 'நடுவர்கள்',
 	'report.judge_totals': 'நடுவர்களின் மொத்தங்கள்',
@@ -523,7 +525,7 @@ export const ta: Record<MessageKey, string> = {
 	'preq.name': 'பங்கேற்பாளர் / அணி பெயர்',
 	'preq.participant': 'பங்கேற்பாளர்',
 	'preq.details': 'விவரங்கள்',
-	'preq.details_help': 'குறியீடு, அலகு, என்ன மாற வேண்டும், ஏன்.',
+	'preq.details_help': 'குறியீடு, சமிதி, என்ன மாற வேண்டும், ஏன்.',
 	'preq.sent': 'கோரிக்கை ஏற்பாட்டாளர்களுக்கு அனுப்பப்பட்டது.',
 	'preq.mine': 'எனது பங்கேற்பாளர் கோரிக்கைகள்',
 	'nav.feedback': 'கருத்துகள்',
@@ -554,5 +556,30 @@ export const ta: Record<MessageKey, string> = {
 	'report.feedback_title': 'கருத்து அறிக்கை',
 	'report.judge_n': 'நடுவர் {n}',
 	'report.no_remarks': 'குறிப்புகள் இல்லை.',
-	'report.total_marks': 'மொத்த மதிப்பெண்கள்'
+	'report.total_marks': 'மொத்த மதிப்பெண்கள்',
+	'admin.participants.dob': 'பிறந்த தேதி',
+	'admin.participants.add_event': 'போட்டியைச் சேர்',
+	'admin.participants.event_kind': 'போட்டி வகை',
+	'admin.participants.kind_individual_event': 'தனிநபர் போட்டி',
+	'admin.participants.kind_team_event': 'குழு / அணி போட்டி',
+	'admin.participants.no_events_available':
+		'இந்தக் குழந்தையின் பிரிவில் இந்த வகையில் வேறு போட்டிகள் இல்லை.',
+	'admin.participants.remove_event': '{event} இலிருந்து நீக்கு',
+	'admin.events.participation': 'போட்டி வகை',
+	'dob.label': 'பிறந்த தேதி',
+	'dob.verified': 'பிறந்த தேதி சரிபார்க்கப்பட்டது',
+	'dob.mark_verified': 'பிறந்த தேதி சரி எனக் குறி',
+	'dob.not_given': 'கொடுக்கப்படவில்லை',
+	'score.reg_no': 'பதிவு எண்',
+	'score.view_marks': 'மதிப்பெண்களைப் பார்',
+	'lock.title_locked': 'மதிப்பெண் இடுதல் பூட்டப்பட்டுள்ளது',
+	'lock.body_locked':
+		'போட்டி தொடங்கும்போது ஏற்பாட்டாளர்கள் மதிப்பெண் இடுதலைத் திறப்பார்கள். இந்தப் பக்கம் தானாகப் புதுப்பிக்கப்படும்.',
+	'lock.admin_title': 'நடுவர்களுக்கான மதிப்பெண் இடுதல்',
+	'lock.admin_open': 'மதிப்பெண் இடுதலைத் திற',
+	'lock.admin_close': 'மதிப்பெண் இடுதலைப் பூட்டு',
+	'lock.admin_state_open': 'திறந்துள்ளது – நடுவர்கள் இப்போது மதிப்பெண் இடலாம்.',
+	'lock.admin_state_locked':
+		'பூட்டப்பட்டுள்ளது – நீங்கள் திறக்கும் வரை நடுவர்கள் மதிப்பெண் இட முடியாது.',
+	'error.SCORING_LOCKED': 'ஏற்பாட்டாளர்கள் மதிப்பெண் இடுதலைப் பூட்டியுள்ளனர்.'
 };

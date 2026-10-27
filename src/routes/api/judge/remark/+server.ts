@@ -26,7 +26,16 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		const { code } = errorCode(error);
 		return json(
 			{ code },
-			{ status: code === 'SUBMISSION_LOCKED' ? 409 : code === 'NOT_FOUND' ? 404 : 400 }
+			{
+				status:
+					code === 'SUBMISSION_LOCKED'
+						? 409
+						: code === 'SCORING_LOCKED'
+							? 423
+							: code === 'NOT_FOUND'
+								? 404
+								: 400
+			}
 		);
 	}
 	return json(data);

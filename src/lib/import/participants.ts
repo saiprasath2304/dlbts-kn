@@ -12,7 +12,8 @@ export const COLUMNS = [
 	'affiliation',
 	'registration_no',
 	'notes',
-	'members'
+	'members',
+	'dob'
 ] as const;
 export const REQUIRED_COLUMNS = ['code', 'name', 'group_code', 'event_code'] as const;
 export const MAX_ROWS = 5000;
@@ -45,7 +46,10 @@ const ALIASES: Record<string, Column> = {
 	note: 'notes',
 	remarks: 'notes',
 	members: 'members',
-	team_members: 'members'
+	team_members: 'members',
+	dob: 'dob',
+	date_of_birth: 'dob',
+	birth_date: 'dob'
 };
 
 export interface ImportRow {
@@ -59,6 +63,8 @@ export interface ImportRow {
 	registration_no: string;
 	notes: string;
 	members: string;
+	/** YYYY-MM-DD, or "" when not given. Invalid input is kept as typed and reported. */
+	dob: string;
 }
 
 export interface RowError {
@@ -122,7 +128,8 @@ export function normalizeRecords(
 			affiliation: v.affiliation ?? '',
 			registration_no: v.registration_no ?? '',
 			notes: v.notes ?? '',
-			members: v.members ?? ''
+			members: v.members ?? '',
+			dob: normalizeDob(v.dob ?? '')
 		});
 	});
 	if (rows.length === 0) return { rows, errors: [{ row: 0, code: 'EMPTY_FILE' }] };
@@ -154,6 +161,8 @@ export function validateRows(
 		const before = errors.length;
 		if (!CODE_RE.test(r.code))
 			errors.push({ row: r.row, field: 'code', code: 'INVALID_CODE', value: r.code });
+		if (r.dob && !/^\d{4}-\d{2}-\d{2}$/.test(r.dob))
+			errors.push({ row: r.row, field: 'dob', code: 'INVALID_DOB', value: r.dob });
 		if (!r.name || r.name.length > 200)
 			errors.push({ row: r.row, field: 'name', code: 'INVALID_NAME', value: r.name });
 		if (r.kind !== 'individual' && r.kind !== 'team')
@@ -218,4 +227,26 @@ export function csvCell(value: unknown): string {
 export function toCsv(header: readonly string[], rows: readonly (readonly unknown[])[]): string {
 	// BOM so Excel opens UTF-8 (Tamil) correctly.
 	return '\uFEFF' + [header, ...rows].map((r) => r.map(csvCell).join(',')).join('\r\n') + '\r\n';
+}
+
+/** Accepts YYYY-MM-DD, DD-MM-YYYY, DD/MM/YYYY or DD.MM.YYYY; returns YYYY-MM-DD (or the input if unparseable). */
+export function normalizeDob(input: string): string {
+	const v = input.trim();
+	if (!v) return '';
+	let y: number, m: number, d: number;
+	let match = v.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
+	if (match) [y, m, d] = [Number(match[1]), Number(match[2]), Number(match[3])];
+	else if ((match = v.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/)))
+		[d, m, y] = [Number(match[1]), Number(match[2]), Number(match[3])];
+	else return v;
+	const date = new Date(Date.UTC(y, m - 1, d));
+	if (
+		date.getUTCFullYear() !== y ||
+		date.getUTCMonth() !== m - 1 ||
+		date.getUTCDate() !== d ||
+		y < 1990 ||
+		y > 2100
+	)
+		return v;
+	return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 }

@@ -13,7 +13,9 @@ export async function loadGroupsWithEvents(db: Db) {
 			.order('name'),
 		db
 			.from('events')
-			.select('id, group_id, code, name, display_order, is_active, score_precision, venue')
+			.select(
+				'id, group_id, code, name, display_order, is_active, score_precision, venue, participation'
+			)
 			.order('display_order')
 			.order('name')
 	]);

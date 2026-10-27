@@ -32,7 +32,14 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	});
 	if (error) {
 		const { code } = errorCode(error);
-		const status = code === 'SUBMISSION_LOCKED' ? 409 : code === 'NOT_FOUND' ? 404 : 400;
+		const status =
+			code === 'SUBMISSION_LOCKED'
+				? 409
+				: code === 'SCORING_LOCKED'
+					? 423
+					: code === 'NOT_FOUND'
+						? 404
+						: 400;
 		return json({ code }, { status });
 	}
 	return json(data);

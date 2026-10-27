@@ -40,6 +40,8 @@ export const EXPORT_HEADER = [
 	'notes',
 	'members',
 	'memento_given',
+	'dob',
+	'dob_verified',
 	'active'
 ] as const;
 
@@ -48,7 +50,7 @@ export async function exportRows(db: Db, filter: { group?: string; event?: strin
 	let q = db
 		.from('participants')
 		.select(
-			'code, name, kind, affiliation, registration_no, notes, members, memento_given, is_active, group_id, groups(code), event_participants(is_active, events(id, code))'
+			'code, name, kind, affiliation, registration_no, notes, members, memento_given, dob, dob_verified, is_active, group_id, groups(code), event_participants(is_active, events(id, code))'
 		)
 		.order('code');
 	if (filter.group) q = q.eq('group_id', filter.group);
@@ -69,6 +71,8 @@ export async function exportRows(db: Db, filter: { group?: string; event?: strin
 			p.notes ?? '',
 			p.members ?? '',
 			p.memento_given ? 'yes' : 'no',
+			p.dob ?? '',
+			p.dob_verified ? 'yes' : 'no',
 			p.is_active ? 'yes' : 'no'
 		];
 		if (scoped.length === 0) rows.push(base(''));

@@ -247,7 +247,7 @@ export const en = {
 	'admin.participants.kind': 'Type',
 	'admin.participants.kind_individual': 'Individual',
 	'admin.participants.kind_team': 'Team',
-	'admin.participants.affiliation': 'Unit / affiliation',
+	'admin.participants.affiliation': 'Samithi',
 	'admin.participants.registration_no': 'Registration number',
 	'admin.participants.notes': 'Notes',
 	'admin.participants.events': 'Events',
@@ -261,7 +261,7 @@ export const en = {
 	'admin.import.help':
 		'Upload a CSV or Excel (.xlsx) file with the columns below. You will see a preview before anything is saved.',
 	'admin.import.columns':
-		'Columns: code, name, group_code, event_code, kind (individual/team), affiliation, registration_no, notes, members (teams)',
+		'Columns: code, name, group_code, event_code, kind (individual/team), affiliation, registration_no, notes, members (teams), dob (YYYY-MM-DD); affiliation = Samithi',
 	'admin.import.template': 'Download template',
 	'admin.import.file': 'File',
 	'admin.import.preview': 'Preview',
@@ -417,6 +417,7 @@ export const en = {
 	'error.network': 'Could not reach the server. Please check the connection.',
 	'error.session': 'Your session has ended. Please sign in again.',
 
+	'import.err.INVALID_DOB': 'Date of birth must be a date such as 2015-06-21 or 21-06-2015',
 	'import.err.INVALID_CODE': 'Code is missing or has unsupported characters',
 	'import.err.INVALID_NAME': 'Name is missing or too long',
 	'import.err.INVALID_KIND': 'Type must be individual or team',
@@ -440,7 +441,7 @@ export const en = {
 	'report.rank': 'Rank',
 	'report.participant': 'Participant / team',
 	'report.code': 'Code',
-	'report.affiliation': 'Unit',
+	'report.affiliation': 'Samithi',
 	'report.aggregate': 'Aggregate',
 	'report.judges': 'Judges',
 	'report.judge_totals': 'Judge totals',
@@ -513,7 +514,7 @@ export const en = {
 	'preq.name': 'Participant / team name',
 	'preq.participant': 'Participant',
 	'preq.details': 'Details',
-	'preq.details_help': 'Code, unit, what should change and why.',
+	'preq.details_help': 'Code, Samithi, what should change and why.',
 	'preq.sent': 'Request sent to the organisers.',
 	'preq.mine': 'My participant requests',
 	'nav.feedback': 'Feedback',
@@ -543,7 +544,30 @@ export const en = {
 	'report.feedback_title': 'Feedback report',
 	'report.judge_n': 'Judge {n}',
 	'report.no_remarks': 'No remarks recorded.',
-	'report.total_marks': 'Total marks'
+	'report.total_marks': 'Total marks',
+	'admin.participants.dob': 'Date of birth',
+	'admin.participants.add_event': 'Add event',
+	'admin.participants.event_kind': 'Type of event',
+	'admin.participants.kind_individual_event': 'Individual event',
+	'admin.participants.kind_team_event': 'Group / team event',
+	'admin.participants.no_events_available': 'No more events of this type for this child’s group.',
+	'admin.participants.remove_event': 'Remove from {event}',
+	'admin.events.participation': 'Event type',
+	'dob.label': 'DOB',
+	'dob.verified': 'DOB verified',
+	'dob.mark_verified': 'Mark DOB verified',
+	'dob.not_given': 'Not given',
+	'score.reg_no': 'Reg. no',
+	'score.view_marks': 'View marks',
+	'lock.title_locked': 'Marking is locked',
+	'lock.body_locked':
+		'The organisers will open marking when the event starts. This page updates automatically.',
+	'lock.admin_title': 'Marking for judges',
+	'lock.admin_open': 'Open marking',
+	'lock.admin_close': 'Lock marking',
+	'lock.admin_state_open': 'Open – judges can enter marks now.',
+	'lock.admin_state_locked': 'Locked – judges cannot enter marks until you open marking.',
+	'error.SCORING_LOCKED': 'Marking is locked by the organisers.'
 } as const;
 
 export type MessageKey = keyof typeof en;
