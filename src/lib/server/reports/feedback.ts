@@ -12,16 +12,17 @@ type Db = SupabaseClient<Database>;
  */
 export async function loadFeedback(
 	db: Db,
-	opts: { eventId?: string; participantId?: string }
+	opts: { eventId?: string; participantId?: string; samithi?: string }
 ): Promise<FeedbackParticipant[]> {
 	let pq = db
 		.from('participants')
 		.select(
-			'id, code, name, affiliation, members, groups(name), event_participants(is_active, event_id, events(id, name, venue, is_active, display_order))'
+			'id, code, name, affiliation, registration_no, members, groups(name), event_participants(is_active, event_id, events(id, name, venue, is_active, display_order))'
 		)
 		.eq('is_active', true)
 		.order('code');
 	if (opts.participantId) pq = pq.eq('id', opts.participantId);
+	if (opts.samithi) pq = pq.eq('affiliation', opts.samithi);
 	const { data: people } = await pq;
 	const rows = (people ?? [])
 		.map((p) => ({
@@ -78,6 +79,7 @@ export async function loadFeedback(
 		name: p.name,
 		code: p.code,
 		affiliation: p.affiliation,
+		registrationNo: p.registration_no,
 		members: p.members,
 		group: p.groups?.name ?? '',
 		events: p.events.map((e) => {

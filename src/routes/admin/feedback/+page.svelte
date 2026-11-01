@@ -17,6 +17,14 @@
 	let marks = $state(false);
 	let reportLocale = $derived<'en' | 'ta'>(locale());
 	const q = (extra: string) => `${extra}&locale=${reportLocale}${marks ? '&marks=1' : ''}`;
+
+	/** Query string for the current event/Samithi scope. */
+	const scope = (eventId: string, samithi: string) =>
+		[eventId && `event=${eventId}`, samithi && `samithi=${encodeURIComponent(samithi)}`]
+			.filter(Boolean)
+			.join('&');
+	const go = (eventId: string, samithi: string) =>
+		goto(`/admin/feedback?${scope(eventId, samithi)}`, { replace: true });
 </script>
 
 <svelte:head><title>{t('admin.feedback.title')}</title></svelte:head>
@@ -25,15 +33,31 @@
 	<PageHeader title={t('admin.feedback.title')} description={t('admin.feedback.help')} />
 
 	<Card.Root>
-		<Card.Content class="grid gap-4 sm:grid-cols-[2fr_1fr] sm:items-end">
+		<Card.Content class="grid gap-4 sm:grid-cols-2 lg:grid-cols-[2fr_2fr_1fr] lg:items-end">
 			<div class="grid gap-2">
 				<Label for="fb-event">{t('admin.feedback.select_event')}</Label>
 				<AppSelect
 					id="fb-event"
 					value={data.eventId}
-					placeholder={t('admin.feedback.select_event')}
-					options={eventOptions(data.groups)}
-					onValueChange={(v) => goto(`/admin/feedback?event=${v}`, { replace: true })}
+					placeholder={t('admin.feedback.all_events')}
+					options={[
+						{ value: '', label: t('admin.feedback.all_events') },
+						...eventOptions(data.groups)
+					]}
+					onValueChange={(v) => go(v, data.samithi)}
+				/>
+			</div>
+			<div class="grid gap-2">
+				<Label for="fb-samithi">{t('report.affiliation')}</Label>
+				<AppSelect
+					id="fb-samithi"
+					value={data.samithi}
+					placeholder={t('admin.feedback.all_samithis')}
+					options={[
+						{ value: '', label: t('admin.feedback.all_samithis') },
+						...data.samithis.map((s) => ({ value: s, label: s }))
+					]}
+					onValueChange={(v) => go(data.eventId, v)}
 				/>
 			</div>
 			<div class="grid gap-2">
@@ -54,13 +78,15 @@
 		</Card.Content>
 	</Card.Root>
 
-	{#if data.eventId}
+	{#if data.eventId || data.samithi}
 		<Card.Root class="gap-0 py-0">
 			<Card.Header class="flex flex-row flex-wrap items-center justify-between gap-3 border-b py-4">
 				<Card.Title>{t('admin.events.tab_participants')} · {data.participants.length}</Card.Title>
-				<Button href="/admin/feedback/pdf?{q(`event=${data.eventId}`)}" download
-					><Download />{t('admin.feedback.download_event')}</Button
-				>
+				{#if data.participants.length}
+					<Button href="/admin/feedback/pdf?{q(scope(data.eventId, data.samithi))}" download
+						><Download />{t('admin.feedback.download_event')}</Button
+					>
+				{/if}
 			</Card.Header>
 			<Table.Root>
 				<Table.Body>
@@ -70,6 +96,8 @@
 								<div class="font-medium">{p.name}</div>
 								<div class="text-muted-foreground text-xs">
 									<span class="font-mono">{p.code}</span>
+									{#if p.affiliation}· {p.affiliation}{/if}
+									{#if !data.eventId && p.events.length}· {p.events.join(', ')}{/if}
 								</div>
 							</Table.Cell>
 							<Table.Cell>
@@ -83,7 +111,9 @@
 							</Table.Cell>
 							<Table.Cell class="text-right">
 								<Button
-									href="/admin/feedback/pdf?{q(`participant=${p.id}`)}"
+									href="/admin/feedback/pdf?{q(
+										`participant=${p.id}${data.eventId ? `&event=${data.eventId}` : ''}`
+									)}"
 									variant="ghost"
 									size="sm"
 									download><Download />{t('admin.feedback.download_one')}</Button
@@ -100,5 +130,7 @@
 				</Table.Body>
 			</Table.Root>
 		</Card.Root>
+	{:else}
+		<p class="text-muted-foreground text-sm">{t('admin.feedback.choose_scope')}</p>
 	{/if}
 </div>

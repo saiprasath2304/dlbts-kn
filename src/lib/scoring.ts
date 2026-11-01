@@ -89,6 +89,18 @@ export function formatMark(value: number | null | undefined, precision = 2): str
 	return precision > 0 ? fixed.replace(/\.?0+$/, '') : fixed;
 }
 
+/**
+ * The marks a judge can pick for one criterion: 0 up to `max`, in whole marks
+ * when the event uses whole numbers, otherwise in half marks.
+ */
+export function markSteps(max: number, precision: number): number[] {
+	const step = precision === 0 ? 1 : 0.5;
+	const top = Math.floor(toHundredths(max) / toHundredths(step));
+	const out = Array.from({ length: top + 1 }, (_, i) => fromHundredths(i * toHundredths(step)));
+	if (toHundredths(out[out.length - 1]) !== toHundredths(max) && precision > 0) out.push(max);
+	return out;
+}
+
 // -----------------------------------------------------------------------------
 // Ranking and ties
 // -----------------------------------------------------------------------------

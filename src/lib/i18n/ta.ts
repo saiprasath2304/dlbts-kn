@@ -544,6 +544,10 @@ export const ta: Record<MessageKey, string> = {
 	'admin.feedback.download_one': 'PDF',
 	'admin.feedback.include_marks': 'மொத்த மதிப்பெண்களைச் சேர்',
 	'admin.feedback.remarks_count': '{n} குறிப்புகள்',
+	'admin.feedback.all_events': 'அனைத்து நிகழ்வுகள்',
+	'admin.feedback.all_samithis': 'அனைத்து சமிதிகள்',
+	'admin.feedback.choose_scope':
+		'பங்கேற்பாளர்களைக் காண ஒரு நிகழ்வு அல்லது சமிதியை (அல்லது இரண்டையும்) தேர்ந்தெடுக்கவும்.',
 	'admin.events.venue': 'அறை / இடம்',
 	'admin.events.venue_help':
 		'குழந்தைகளை வழிநடத்த நடுவர்களுக்குக் காட்டப்படும், எ.கா. அறை 12, பிரதான அரங்கம்.',

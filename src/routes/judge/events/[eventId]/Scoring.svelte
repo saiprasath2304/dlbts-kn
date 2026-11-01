@@ -40,7 +40,13 @@
 	import AppSelect from '#lib/components/app/AppSelect.svelte';
 	import { t, locale } from '#lib/i18n/t.svelte.ts';
 	import { formatDateTime, formatDob } from '#lib/i18n/index.ts';
-	import { formatMark, parseMark, participantTotal, type MarkError } from '#lib/scoring.ts';
+	import {
+		formatMark,
+		markSteps,
+		parseMark,
+		participantTotal,
+		type MarkError
+	} from '#lib/scoring.ts';
 	import { isEditable, isSubmitted } from '#lib/status.ts';
 	import { ScoreSync, type Conflict } from '#lib/offline/score-sync.svelte.ts';
 	import type { SubmissionStatus } from '#lib/types.ts';
@@ -300,20 +306,28 @@
 		void sync.setMark(participantId, criterionId, r.value);
 	}
 
-	function onBlur(participantId: string, criterionId: string, max: number) {
-		const k = key(participantId, criterionId);
-		const r = parseMark(inputs[k] ?? '', max, precision);
-		if (r.ok) inputs[k] = formatMark(r.value, precision);
-	}
-
-	function onKeydown(e: KeyboardEvent) {
-		if (e.key !== 'Enter') return;
-		e.preventDefault();
-		const all = [...document.querySelectorAll<HTMLInputElement>('input[data-score]')];
-		const i = all.indexOf(e.currentTarget as HTMLInputElement);
-		if (all[i + 1]) all[i + 1].focus();
-		else document.getElementById(`r-${currentId}`)?.focus();
-	}
+	/** Dropdown choices per criterion: "–" (no mark) then 0…max. */
+	const markOptions = $derived(
+		Object.fromEntries(
+			data.criteria.map((c) => [
+				c.id,
+				[
+					{ value: '', label: '–' },
+					...markSteps(c.max_marks, precision).map((v) => {
+						const s = formatMark(v, precision);
+						return { value: s, label: s };
+					})
+				]
+			])
+		)
+	);
+	/** Keeps an older off-step mark (e.g. 7.25) visible instead of a blank trigger. */
+	const optionsFor = (criterionId: string, current: string) => {
+		const opts = markOptions[criterionId] ?? [];
+		return current && !opts.some((o) => o.value === current)
+			? [...opts, { value: current, label: current }]
+			: opts;
+	};
 
 	function errorText(code: MarkError, max: number) {
 		if (code === 'ABOVE_MAX') return t('score.err.ABOVE_MAX', { max });
@@ -915,26 +929,14 @@
 						<div class="grid gap-1.5">
 							<Label for="m-{k}" class="text-base">{c.name}</Label>
 							<div class="flex items-center gap-2">
-								<Input
+								<AppSelect
 									id="m-{k}"
-									data-score
-									type="text"
-									inputmode={precision === 0 ? 'numeric' : 'decimal'}
-									enterkeyhint="next"
-									autocomplete="off"
-									aria-label={t('score.input_label', {
-										criterion: c.name,
-										participant: p.label,
-										max: formatMark(c.max_marks)
-									})}
-									aria-invalid={err ? 'true' : undefined}
-									aria-describedby={err ? `e-${k}` : undefined}
 									value={inputs[k] ?? ''}
-									readonly={!canEdit}
-									oninput={(e) => onInput(p.id, c.id, c.max_marks, e.currentTarget.value)}
-									onblur={() => onBlur(p.id, c.id, c.max_marks)}
-									onkeydown={onKeydown}
-									class="h-14 w-full max-w-28 text-center text-2xl font-bold tabular-nums read-only:bg-muted read-only:border-dashed"
+									placeholder="–"
+									options={optionsFor(c.id, inputs[k] ?? '')}
+									disabled={!canEdit}
+									onValueChange={(v) => onInput(p.id, c.id, c.max_marks, v)}
+									class="h-14 w-full max-w-32 justify-center text-2xl font-bold tabular-nums"
 								/>
 								<span
 									class="text-muted-foreground text-lg font-semibold whitespace-nowrap"

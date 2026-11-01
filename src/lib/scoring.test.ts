@@ -3,6 +3,7 @@ import {
 	aggregateTotals,
 	applyTieResolutions,
 	findTies,
+	markSteps,
 	formatMark,
 	parseMark,
 	participantTotal,
@@ -137,5 +138,15 @@ describe('ranking and ties', () => {
 			{}
 		);
 		expect(podium(two).map((p) => p.final_rank)).toEqual([1, 2]);
+	});
+});
+
+describe('markSteps', () => {
+	it('lists whole marks when precision is 0', () => {
+		expect(markSteps(5, 0)).toEqual([0, 1, 2, 3, 4, 5]);
+	});
+	it('lists half marks otherwise and always reaches the max', () => {
+		expect(markSteps(2, 2)).toEqual([0, 0.5, 1, 1.5, 2]);
+		expect(markSteps(1.25, 2)).toEqual([0, 0.5, 1, 1.25]);
 	});
 });

@@ -10,7 +10,8 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 	requireAdmin(locals);
 	const eventId = url.searchParams.get('event');
 	const participantId = url.searchParams.get('participant');
-	if (!isUuid(eventId) && !isUuid(participantId))
+	const samithi = (url.searchParams.get('samithi') ?? '').trim();
+	if (!isUuid(eventId) && !isUuid(participantId) && !samithi)
 		error(400, { message: 'Choose an event or participant' });
 	const locale =
 		url.searchParams.get('locale') === 'ta'
@@ -20,7 +21,8 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 				: locals.locale;
 	const participants = await loadFeedback(locals.supabase, {
 		eventId: isUuid(eventId) ? eventId : undefined,
-		participantId: isUuid(participantId) ? participantId : undefined
+		participantId: isUuid(participantId) ? participantId : undefined,
+		samithi: samithi || undefined
 	});
 	const settings = await getSettings();
 	const pdf = await renderFeedback({
@@ -31,7 +33,9 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 		participants
 	});
 	const slug = (
-		participants.length === 1 ? participants[0].code : (eventId ?? 'event').slice(0, 8)
+		participants.length === 1
+			? participants[0].code
+			: [samithi, isUuid(eventId) ? eventId.slice(0, 8) : ''].filter(Boolean).join('-') || 'all'
 	).replace(/[^A-Za-z0-9._-]/g, '_');
 	return new Response(new Uint8Array(pdf), {
 		headers: {

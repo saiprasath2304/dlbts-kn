@@ -533,6 +533,9 @@ export const en = {
 	'admin.feedback.download_one': 'PDF',
 	'admin.feedback.include_marks': 'Include total marks',
 	'admin.feedback.remarks_count': '{n} remarks',
+	'admin.feedback.all_events': 'All events',
+	'admin.feedback.all_samithis': 'All Samithis',
+	'admin.feedback.choose_scope': 'Choose an event or a Samithi (or both) to list participants.',
 	'admin.events.venue': 'Room / venue',
 	'admin.events.venue_help':
 		'Shown to judges so they can guide children, e.g. Room 12 or Main hall.',

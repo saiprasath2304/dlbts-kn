@@ -402,6 +402,7 @@ export interface FeedbackParticipant {
 	name: string;
 	code: string;
 	affiliation: string | null;
+	registrationNo?: string | null;
 	members: string | null;
 	group: string;
 	events: {
@@ -458,7 +459,14 @@ export async function renderFeedback(input: {
 		doc.y = Math.max(doc.y, M + LOGO) + 14;
 
 		write(doc, p.name, { x: M, y: doc.y, size: 17, bold: true, width: W });
-		const sub = [p.code, p.group, p.affiliation].filter(Boolean).join(' · ');
+		const sub = [
+			`${t('report.code')}: ${p.code}`,
+			p.registrationNo ? `${t('score.reg_no')}: ${p.registrationNo}` : '',
+			p.group,
+			p.affiliation ? `${t('report.affiliation')}: ${p.affiliation}` : ''
+		]
+			.filter(Boolean)
+			.join(' · ');
 		write(doc, sub, { x: M, y: doc.y, size: 10, color: COLORS.muted, width: W });
 		if (p.members)
 			write(doc, `${t('score.members')}: ${p.members}`, {
