@@ -19,6 +19,7 @@
 	import Scale from '@lucide/svelte/icons/scale';
 	import Search from '@lucide/svelte/icons/search';
 	import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
+	import Trophy from '@lucide/svelte/icons/trophy';
 	import UserPlus from '@lucide/svelte/icons/user-plus';
 	import Users from '@lucide/svelte/icons/users';
 	import * as Alert from '#lib/components/ui/alert/index.js';
@@ -375,7 +376,15 @@
 				</p>
 			{/if}
 		</div>
-		<StatusBadge {status} />
+		<div class="flex shrink-0 flex-col items-end gap-2">
+			<StatusBadge {status} />
+			<Button
+				href="/judge/events/{data.event.id}/leaderboard"
+				variant="outline"
+				size="sm"
+				onclick={() => void sync.flush()}><Trophy />{t('leaderboard.button')}</Button
+			>
+		</div>
 	</div>
 
 	<FormFeedback {form} />
@@ -809,7 +818,9 @@
 </div>
 
 <Dialog.Root bind:open={dialogOpen}>
-	<Dialog.Content class="max-h-[92svh] gap-0 overflow-y-auto p-0 sm:max-w-xl">
+	<Dialog.Content
+		class="top-auto bottom-2 max-h-[88svh] w-[calc(100%-1rem)] max-w-[calc(100%-1rem)] translate-y-0 gap-0 overflow-y-auto p-0 sm:top-1/2 sm:bottom-auto sm:max-w-lg sm:-translate-y-1/2"
+	>
 		{#if current}
 			{@const p = current}
 			{@const total = totals[p.id]}
@@ -817,23 +828,23 @@
 			{@const m = memento[p.id]}
 			{@const d = dob[p.id]}
 			<div
-				class="bg-background/95 sticky top-0 z-10 flex items-start justify-between gap-3 border-b px-5 py-4 pr-12 backdrop-blur"
+				class="bg-background/95 sticky top-0 z-10 flex items-center justify-between gap-3 border-b px-4 py-2.5 pr-12 backdrop-blur"
 			>
 				<div class="min-w-0">
-					<Dialog.Title class="font-mono text-xl font-bold">{p.label}</Dialog.Title>
-					<Dialog.Description class="text-sm">
-						{#if p.registration_no}{t('common.code')}: {p.code} ·
+					<Dialog.Title class="truncate font-mono text-lg font-bold">{p.label}</Dialog.Title>
+					<Dialog.Description class="truncate text-xs">
+						{#if p.registration_no}{p.code} ·
 						{/if}{data.event.name}
 					</Dialog.Description>
 				</div>
-				<div class="shrink-0 text-right">
-					<div class="text-2xl font-bold tabular-nums">
-						{formatMark(total.total)}<span class="text-muted-foreground text-base font-semibold"
+				<div class="shrink-0 text-right leading-tight">
+					<div class="text-xl font-bold tabular-nums">
+						{formatMark(total.total)}<span class="text-muted-foreground text-sm font-semibold"
 							>&nbsp;/&nbsp;{formatMark(total.max)}</span
 						>
 					</div>
 					{#if total.complete}
-						<Badge variant="success"><CircleCheck />{t('score.evaluated')}</Badge>
+						<span class="text-success text-xs font-semibold">{t('score.evaluated')}</span>
 					{:else}
 						<span class="text-muted-foreground text-xs">
 							{t('score.incomplete', { n: total.required - total.filled })}
@@ -842,111 +853,83 @@
 				</div>
 			</div>
 
-			<div class="grid gap-5 px-5 py-4">
-				<div class="grid gap-2 text-sm">
-					<div class="flex flex-wrap items-center gap-2">
-						<span>
-							<span class="text-muted-foreground">{t('dob.label')}:</span>
-							<strong>{p.dob ? formatDob(p.dob) : t('dob.not_given')}</strong>
-						</span>
-						{#if p.kind === 'team'}<Badge variant="secondary"><Users />{t('score.team')}</Badge
-							>{/if}
-					</div>
-					<div class="flex flex-wrap items-center gap-2">
-						{#if d?.verified}
-							<Badge variant="success" class="text-sm"><BadgeCheck />{t('dob.verified')}</Badge>
-							<span class="text-muted-foreground text-xs">
-								{t('memento.given_by', { name: d.by ?? '', time: formatDateTime(locale(), d.at) })}
-							</span>
-							<Button
-								size="sm"
-								variant="ghost"
-								disabled={flagBusy[`d${p.id}`]}
-								onclick={() => toggleDob(p.id, false)}
-							>
-								{t('memento.undo')}
-							</Button>
-						{:else}
-							<Button
-								size="sm"
-								variant="outline"
-								disabled={flagBusy[`d${p.id}`]}
-								onclick={() => toggleDob(p.id, true)}
-							>
-								<BadgeCheck />{t('dob.mark_verified')}
-							</Button>
-						{/if}
-					</div>
-					<div class="flex flex-wrap items-center gap-2">
-						{#if m?.given}
-							<Badge variant="success" class="text-sm"><Gift />{t('memento.given')}</Badge>
-							<span class="text-muted-foreground text-xs">
-								{t('memento.given_by', { name: m.by ?? '', time: formatDateTime(locale(), m.at) })}
-							</span>
-							<Button
-								size="sm"
-								variant="ghost"
-								disabled={flagBusy[`m${p.id}`]}
-								onclick={() => toggleMemento(p.id, false)}
-							>
-								{t('memento.undo')}
-							</Button>
-						{:else}
-							<Button
-								size="sm"
-								variant="outline"
-								disabled={flagBusy[`m${p.id}`]}
-								onclick={() => toggleMemento(p.id, true)}
-							>
-								<Gift />{t('memento.mark_given')}
-							</Button>
-						{/if}
-					</div>
-					{#if ctx?.other_events.length}
-						<div class="bg-muted/60 rounded-lg px-3 py-2">
-							<span class="text-muted-foreground font-medium">{t('score.also_in')}:</span>
-							<ul class="mt-1 grid gap-0.5">
-								{#each ctx.other_events as e (e.event_id)}
-									<li class="flex flex-wrap items-center gap-x-2">
-										<span class="font-medium">{e.name}</span>
-										<span class="text-muted-foreground text-xs">{e.group}</span>
-										{#if e.venue}
-											<span class="text-muted-foreground inline-flex items-center gap-1 text-xs">
-												<MapPin class="size-3" />{e.venue}
-											</span>
-										{/if}
-									</li>
-								{/each}
-							</ul>
-						</div>
-					{/if}
+			<div class="grid gap-3 px-4 py-3">
+				<div class="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
+					<span>
+						<span class="text-muted-foreground">{t('dob.label')}:</span>
+						<strong>{p.dob ? formatDob(p.dob) : t('dob.not_given')}</strong>
+					</span>
+					{#if p.kind === 'team'}<Badge variant="secondary"><Users />{t('score.team')}</Badge>{/if}
 				</div>
+				<div class="flex flex-wrap gap-2">
+					<Button
+						size="sm"
+						variant={d?.verified ? 'secondary' : 'outline'}
+						class={d?.verified ? 'text-success' : ''}
+						disabled={flagBusy[`d${p.id}`]}
+						title={d?.verified
+							? t('memento.given_by', { name: d.by ?? '', time: formatDateTime(locale(), d.at) })
+							: undefined}
+						onclick={() => toggleDob(p.id, !d?.verified)}
+					>
+						<BadgeCheck />{d?.verified ? t('dob.verified') : t('dob.mark_verified')}
+					</Button>
+					<Button
+						size="sm"
+						variant={m?.given ? 'secondary' : 'outline'}
+						class={m?.given ? 'text-success' : ''}
+						disabled={flagBusy[`m${p.id}`]}
+						title={m?.given
+							? t('memento.given_by', { name: m.by ?? '', time: formatDateTime(locale(), m.at) })
+							: undefined}
+						onclick={() => toggleMemento(p.id, !m?.given)}
+					>
+						<Gift />{m?.given ? t('memento.given') : t('memento.mark_given')}
+					</Button>
+				</div>
+				{#if d?.verified || m?.given}
+					<p class="text-muted-foreground -mt-1 text-xs">{t('score.tap_to_undo')}</p>
+				{/if}
+				{#if ctx?.other_events.length}
+					<div class="bg-muted/60 rounded-md px-3 py-1.5 text-xs">
+						<span class="text-muted-foreground font-medium">{t('score.also_in')}:</span>
+						{#each ctx.other_events as e, i (e.event_id)}
+							{#if i}<span class="text-muted-foreground"> · </span>{/if}<span class="font-medium"
+								>{e.name}</span
+							>{#if e.venue}<span class="text-muted-foreground"> ({e.venue})</span>{/if}
+						{/each}
+					</div>
+				{/if}
 
-				<div class="grid grid-cols-2 gap-x-3 gap-y-4">
+				<div class="divide-y rounded-lg border">
 					{#each data.criteria as c (c.id)}
 						{@const k = key(p.id, c.id)}
 						{@const err = errors[k]}
-						<div class="grid gap-1.5">
-							<Label for="m-{k}" class="text-base">{c.name}</Label>
-							<div class="flex items-center gap-2">
-								<AppSelect
-									id="m-{k}"
-									value={inputs[k] ?? ''}
-									placeholder="–"
-									options={optionsFor(c.id, inputs[k] ?? '')}
-									disabled={!canEdit}
-									onValueChange={(v) => onInput(p.id, c.id, c.max_marks, v)}
-									class="h-14 w-full max-w-32 justify-center text-2xl font-bold tabular-nums"
-								/>
-								<span
-									class="text-muted-foreground text-lg font-semibold whitespace-nowrap"
-									aria-hidden="true"
-								>
-									/ {formatMark(c.max_marks)}
-								</span>
+						<div class="px-3 py-2">
+							<div class="flex items-center justify-between gap-3">
+								<Label for="m-{k}" class="min-w-0 flex-1 text-sm leading-snug">{c.name}</Label>
+								<div class="flex shrink-0 items-center gap-1.5">
+									<AppSelect
+										id="m-{k}"
+										value={inputs[k] ?? ''}
+										placeholder="–"
+										searchable={false}
+										options={optionsFor(c.id, inputs[k] ?? '')}
+										disabled={!canEdit}
+										onValueChange={(v) => onInput(p.id, c.id, c.max_marks, v)}
+										class="h-11 w-20 justify-center px-2 text-lg font-bold tabular-nums"
+										contentClass="w-28 min-w-28"
+									/>
+									<span
+										class="text-muted-foreground w-10 text-sm font-semibold whitespace-nowrap"
+										aria-hidden="true"
+									>
+										/ {formatMark(c.max_marks)}
+									</span>
+								</div>
 							</div>
 							{#if err}
-								<p class="text-destructive text-sm font-semibold" id="e-{k}" role="alert">
+								<p class="text-destructive mt-1 text-xs font-semibold" id="e-{k}" role="alert">
 									{errorText(err, c.max_marks)}
 								</p>
 							{/if}
@@ -954,7 +937,7 @@
 					{/each}
 				</div>
 
-				<div class="grid gap-1.5">
+				<div class="grid gap-1">
 					<div class="flex items-center justify-between gap-2">
 						<Label for="r-{p.id}" class="text-sm">{t('score.remarks')}</Label>
 						<span class="text-muted-foreground text-xs" aria-live="polite">
@@ -968,15 +951,16 @@
 						</span>
 					</div>
 					{#if canEdit}
+						<!-- text-base (16px) stops iOS from zooming in when the box is focused -->
 						<Textarea
 							id="r-{p.id}"
-							rows={3}
+							rows={2}
 							maxlength={2000}
 							value={remarks[p.id] ?? ''}
 							oninput={(e) => onRemark(p.id, e.currentTarget.value)}
 							onblur={() => dirty[p.id] && saveRemark(p.id)}
 							placeholder={t('score.remarks_placeholder')}
-							class="text-base"
+							class="min-h-16 text-base"
 						/>
 					{:else}
 						<p id="r-{p.id}" class="text-muted-foreground text-sm whitespace-pre-wrap">
@@ -987,7 +971,7 @@
 			</div>
 
 			<div
-				class="bg-background/95 sticky bottom-0 flex items-center justify-between gap-3 border-t px-5 py-3 backdrop-blur"
+				class="bg-background/95 sticky bottom-0 flex items-center justify-between gap-3 border-t px-4 py-2 backdrop-blur"
 			>
 				<div class="min-w-0 flex-1">
 					{#if canEdit}
@@ -999,7 +983,7 @@
 						/>
 					{/if}
 				</div>
-				<Button size="lg" onclick={() => (dialogOpen = false)}>{t('score.done_editing')}</Button>
+				<Button onclick={() => (dialogOpen = false)}>{t('score.done_editing')}</Button>
 			</div>
 		{/if}
 	</Dialog.Content>

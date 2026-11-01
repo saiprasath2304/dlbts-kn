@@ -8,6 +8,7 @@
 	import CalendarDays from '@lucide/svelte/icons/calendar-days';
 	import Users from '@lucide/svelte/icons/users';
 	import UserCheck from '@lucide/svelte/icons/user-check';
+	import ListChecks from '@lucide/svelte/icons/list-checks';
 	import ScrollText from '@lucide/svelte/icons/scroll-text';
 	import Settings from '@lucide/svelte/icons/settings';
 	import { page } from '$app/state';
@@ -44,6 +45,7 @@
 			items: [
 				{ href: '/admin/events', key: 'nav.events', icon: CalendarDays },
 				{ href: '/admin/participants', key: 'nav.participants', icon: Users },
+				{ href: '/admin/attendance', key: 'nav.attendance', icon: ListChecks },
 				{ href: '/admin/judges', key: 'nav.judges', icon: UserCheck },
 				{ href: '/admin/audit', key: 'nav.audit', icon: ScrollText },
 				{ href: '/admin/settings', key: 'nav.settings', icon: Settings }

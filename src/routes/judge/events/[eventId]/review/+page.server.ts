@@ -4,13 +4,18 @@ import { requireJudge } from '#lib/server/guards.ts';
 import { failWith } from '#lib/server/errors.ts';
 import { translate } from '#lib/i18n/index.ts';
 import { isEditable } from '#lib/status.ts';
+import { loadLeaderboard, tieGroups } from '#lib/server/leaderboard.ts';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, params }) => {
 	requireJudge(locals);
-	const data = await loadJudgeEvent(locals, params.eventId);
+	const [data, leaderboard] = await Promise.all([
+		loadJudgeEvent(locals, params.eventId),
+		loadLeaderboard(locals, params.eventId)
+	]);
 	if (!isEditable(data.submission.status)) redirect(303, `/judge/events/${params.eventId}/receipt`);
-	return data;
+	// Ties in the combined totals are shown before the judge submits.
+	return { ...data, ties: tieGroups(leaderboard.rows) };
 };
 
 export const actions: Actions = {

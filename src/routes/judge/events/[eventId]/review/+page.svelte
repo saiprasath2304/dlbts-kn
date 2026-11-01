@@ -5,6 +5,9 @@
 	import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
 	import CircleCheck from '@lucide/svelte/icons/circle-check';
 	import Send from '@lucide/svelte/icons/send';
+	import Scale from '@lucide/svelte/icons/scale';
+	import Trophy from '@lucide/svelte/icons/trophy';
+	import * as AlertDialog from '#lib/components/ui/alert-dialog/index.js';
 	import * as Card from '#lib/components/ui/card/index.js';
 	import * as Alert from '#lib/components/ui/alert/index.js';
 	import * as Table from '#lib/components/ui/table/index.js';
@@ -22,6 +25,18 @@
 	let pending = $state<number | null>(null);
 	let confirmed = $state(false);
 	let busy = $state(false);
+	// Ties need one extra confirmation before the final submit goes through.
+	let tieDialog = $state(false);
+	let tieAck = false;
+	let formEl = $state<HTMLFormElement>();
+	const tieText = $derived(
+		data.ties.map((g) => t('leaderboard.tie_line', { rank: g.rank, ids: g.labels.join(', ') }))
+	);
+	function submitAnyway() {
+		tieAck = true;
+		tieDialog = false;
+		formEl?.requestSubmit();
+	}
 
 	const rows = $derived(
 		data.participants.map((p) => {
@@ -74,6 +89,24 @@
 			>
 		</Alert.Root>
 	{/if}
+	{#if data.ties.length}
+		<Alert.Root variant="warning" role="alert">
+			<Scale />
+			<Alert.Title>{t('leaderboard.ties_title')}</Alert.Title>
+			<Alert.Description>
+				<ul class="list-disc pl-4">
+					{#each tieText as line (line)}<li>{line}</li>{/each}
+				</ul>
+				<p>{t('leaderboard.ties_body')}</p>
+				<Button
+					href="/judge/events/{data.event.id}/leaderboard"
+					variant="outline"
+					size="sm"
+					class="mt-2"><Trophy />{t('leaderboard.button')}</Button
+				>
+			</Alert.Description>
+		</Alert.Root>
+	{/if}
 	{#if incomplete > 0}
 		<Alert.Root variant="destructive" role="alert"
 			><TriangleAlert /><Alert.Title>{t('submit.incomplete')}</Alert.Title></Alert.Root
@@ -118,7 +151,14 @@
 	<Card.Root class="border-primary/30">
 		<form
 			method="POST"
-			use:enhance={() => {
+			bind:this={formEl}
+			use:enhance={({ cancel }) => {
+				if (data.ties.length && !tieAck) {
+					cancel();
+					tieDialog = true;
+					return;
+				}
+				tieAck = false;
 				busy = true;
 				return async ({ result, update }) => {
 					if (result.type === 'redirect') await clearDrafts(data.profile!.id, data.submission.id);
@@ -159,3 +199,23 @@
 		</form>
 	</Card.Root>
 </div>
+
+<AlertDialog.Root bind:open={tieDialog}>
+	<AlertDialog.Content>
+		<AlertDialog.Header>
+			<AlertDialog.Title>{t('leaderboard.confirm_title')}</AlertDialog.Title>
+			<AlertDialog.Description>
+				{t('leaderboard.confirm_body')}
+			</AlertDialog.Description>
+		</AlertDialog.Header>
+		<ul class="list-disc pl-5 text-sm font-medium">
+			{#each tieText as line (line)}<li>{line}</li>{/each}
+		</ul>
+		<AlertDialog.Footer>
+			<AlertDialog.Cancel>{t('leaderboard.go_back_fix')}</AlertDialog.Cancel>
+			<AlertDialog.Action onclick={submitAnyway}
+				>{t('leaderboard.submit_anyway')}</AlertDialog.Action
+			>
+		</AlertDialog.Footer>
+	</AlertDialog.Content>
+</AlertDialog.Root>

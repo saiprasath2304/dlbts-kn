@@ -570,7 +570,41 @@ export const en = {
 	'lock.admin_close': 'Lock marking',
 	'lock.admin_state_open': 'Open – judges can enter marks now.',
 	'lock.admin_state_locked': 'Locked – judges cannot enter marks until you open marking.',
-	'error.SCORING_LOCKED': 'Marking is locked by the organisers.'
+	'error.SCORING_LOCKED': 'Marking is locked by the organisers.',
+	'nav.attendance': 'Attendance',
+	'attendance.title': 'Attendance',
+	'attendance.help':
+		'Tick Present or Absent as each child arrives — it saves straight away. Tell the child the ID shown under their name; judges only see this ID.',
+	'attendance.search_help': 'Name, ID or code',
+	'attendance.present': 'Present',
+	'attendance.absent': 'Absent',
+	'attendance.unmarked': 'Not marked',
+	'attendance.id': 'ID',
+	'attendance.saving': 'Saving…',
+	'attendance.not_saved': 'Not saved – tap again',
+	'score.tap_to_undo': 'Tap a green button again to undo it.',
+	'leaderboard.button': 'Leaderboard',
+	'leaderboard.title': 'Leaderboard',
+	'leaderboard.back': 'Back to marking',
+	'leaderboard.refresh': 'Refresh',
+	'leaderboard.you': 'you',
+	'leaderboard.submitted': 'submitted',
+	'leaderboard.in_progress': 'marking',
+	'leaderboard.ties_title': 'Tie in the combined marks',
+	'leaderboard.ties_body':
+		'The highlighted children have the same total. Please recheck your marks for them before the final submit.',
+	'leaderboard.judge_short': 'J{n}',
+	'leaderboard.tie': 'Tie',
+	'leaderboard.marks_pending': '{n} marks still to be entered',
+	'leaderboard.footnote':
+		'Total = all judges’ marks added together (each judge out of {max}). Updates every 30 seconds.',
+	'leaderboard.empty': 'No participants in this event yet.',
+	'leaderboard.tie_line': 'Rank {rank}: {ids}',
+	'leaderboard.confirm_title': 'There is a tie. Submit anyway?',
+	'leaderboard.confirm_body':
+		'These children have the same combined total. You can go back and correct your marks, or submit as it is.',
+	'leaderboard.go_back_fix': 'Go back and correct',
+	'leaderboard.submit_anyway': 'Submit anyway'
 } as const;
 
 export type MessageKey = keyof typeof en;

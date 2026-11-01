@@ -650,6 +650,9 @@ export type Database = {
 					dob_verified: boolean;
 					dob_verified_at: string | null;
 					dob_verified_by: string | null;
+					attendance: string | null;
+					attendance_at: string | null;
+					attendance_by: string | null;
 				};
 				ComputedFields: never;
 				Insert: {
@@ -672,6 +675,9 @@ export type Database = {
 					dob_verified?: boolean;
 					dob_verified_at?: string | null;
 					dob_verified_by?: string | null;
+					attendance?: string | null;
+					attendance_at?: string | null;
+					attendance_by?: string | null;
 				};
 				Update: {
 					affiliation?: string | null;
@@ -693,6 +699,9 @@ export type Database = {
 					dob_verified?: boolean;
 					dob_verified_at?: string | null;
 					dob_verified_by?: string | null;
+					attendance?: string | null;
+					attendance_at?: string | null;
+					attendance_by?: string | null;
 				};
 				Relationships: [
 					{
@@ -1321,6 +1330,11 @@ export type Database = {
 				}[];
 			};
 			event_tie_alerts: { Args: { p_event_id: string }; Returns: Json };
+			event_leaderboard: { Args: { p_event_id: string }; Returns: Json };
+			admin_set_attendance: {
+				Args: { p_participant_id: string; p_status: string | null };
+				Returns: Json;
+			};
 			request_participant_change: {
 				Args: {
 					p_details: string;

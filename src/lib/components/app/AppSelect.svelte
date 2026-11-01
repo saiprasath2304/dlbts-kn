@@ -19,7 +19,8 @@
 		disabled = false,
 		searchable,
 		onValueChange,
-		class: className
+		class: className,
+		contentClass
 	}: {
 		id?: string;
 		name?: string;
@@ -31,6 +32,8 @@
 		searchable?: boolean;
 		onValueChange?: (value: string) => void;
 		class?: string;
+		/** Classes for the drop-down panel, e.g. a narrower width. */
+		contentClass?: string;
 	} = $props();
 
 	let open = $state(false);
@@ -70,7 +73,10 @@
 		>
 		<ChevronsUpDown class="text-muted-foreground size-4 shrink-0" />
 	</Popover.Trigger>
-	<Popover.Content class="w-(--bits-popover-anchor-width) min-w-64 p-0" align="start">
+	<Popover.Content
+		class={cn('w-(--bits-popover-anchor-width) min-w-64 p-0', contentClass)}
+		align="start"
+	>
 		<Command.Root>
 			{#if showSearch}
 				<Command.Input placeholder={t('common.search_placeholder')} class="h-10 text-base" />

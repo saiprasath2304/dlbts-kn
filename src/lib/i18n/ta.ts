@@ -585,5 +585,39 @@ export const ta: Record<MessageKey, string> = {
 	'lock.admin_state_open': 'திறந்துள்ளது – நடுவர்கள் இப்போது மதிப்பெண் இடலாம்.',
 	'lock.admin_state_locked':
 		'பூட்டப்பட்டுள்ளது – நீங்கள் திறக்கும் வரை நடுவர்கள் மதிப்பெண் இட முடியாது.',
-	'error.SCORING_LOCKED': 'ஏற்பாட்டாளர்கள் மதிப்பெண் இடுதலைப் பூட்டியுள்ளனர்.'
+	'error.SCORING_LOCKED': 'ஏற்பாட்டாளர்கள் மதிப்பெண் இடுதலைப் பூட்டியுள்ளனர்.',
+	'nav.attendance': 'வருகைப் பதிவு',
+	'attendance.title': 'வருகைப் பதிவு',
+	'attendance.help':
+		'ஒவ்வொரு குழந்தையும் வந்தவுடன் வந்தார் / வரவில்லை எனக் குறிக்கவும் – உடனே சேமிக்கப்படும். பெயருக்குக் கீழே உள்ள ID-யைக் குழந்தையிடம் சொல்லவும்; நடுவர்கள் இந்த ID-யை மட்டுமே பார்ப்பார்கள்.',
+	'attendance.search_help': 'பெயர், ID அல்லது குறியீடு',
+	'attendance.present': 'வந்தார்',
+	'attendance.absent': 'வரவில்லை',
+	'attendance.unmarked': 'குறிக்கப்படவில்லை',
+	'attendance.id': 'ID',
+	'attendance.saving': 'சேமிக்கிறது…',
+	'attendance.not_saved': 'சேமிக்கப்படவில்லை – மீண்டும் தொடவும்',
+	'score.tap_to_undo': 'நீக்க, பச்சை பொத்தானை மீண்டும் தொடவும்.',
+	'leaderboard.button': 'தரவரிசை',
+	'leaderboard.title': 'தரவரிசை',
+	'leaderboard.back': 'மதிப்பெண் இடுதலுக்குத் திரும்பு',
+	'leaderboard.refresh': 'புதுப்பி',
+	'leaderboard.you': 'நீங்கள்',
+	'leaderboard.submitted': 'சமர்ப்பிக்கப்பட்டது',
+	'leaderboard.in_progress': 'மதிப்பிடுகிறார்',
+	'leaderboard.ties_title': 'மொத்த மதிப்பெண்ணில் சமநிலை',
+	'leaderboard.ties_body':
+		'குறிக்கப்பட்ட குழந்தைகளுக்கு ஒரே மொத்தம் உள்ளது. இறுதிச் சமர்ப்பிப்புக்கு முன் அவர்களுக்கான உங்கள் மதிப்பெண்களை மீண்டும் சரிபார்க்கவும்.',
+	'leaderboard.judge_short': 'ந{n}',
+	'leaderboard.tie': 'சமநிலை',
+	'leaderboard.marks_pending': 'இன்னும் {n} மதிப்பெண்கள் இட வேண்டும்',
+	'leaderboard.footnote':
+		'மொத்தம் = அனைத்து நடுவர்களின் மதிப்பெண்களின் கூட்டு (ஒவ்வொருவரும் {max}-க்கு). 30 விநாடிகளுக்கு ஒருமுறை புதுப்பிக்கப்படும்.',
+	'leaderboard.empty': 'இந்த நிகழ்வில் இன்னும் பங்கேற்பாளர்கள் இல்லை.',
+	'leaderboard.tie_line': 'தரம் {rank}: {ids}',
+	'leaderboard.confirm_title': 'சமநிலை உள்ளது. இருந்தாலும் சமர்ப்பிக்கவா?',
+	'leaderboard.confirm_body':
+		'இந்தக் குழந்தைகளுக்கு ஒரே மொத்தம் உள்ளது. திரும்பிச் சென்று மதிப்பெண்களைத் திருத்தலாம், அல்லது அப்படியே சமர்ப்பிக்கலாம்.',
+	'leaderboard.go_back_fix': 'திரும்பிச் சென்று திருத்து',
+	'leaderboard.submit_anyway': 'இருந்தாலும் சமர்ப்பி'
 };
